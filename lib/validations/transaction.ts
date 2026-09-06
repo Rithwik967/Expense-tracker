@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { ADJUSTMENT_DIRECTIONS, TRANSACTION_TYPES } from "@/lib/finance/types";
+import {
+  ADJUSTMENT_DIRECTIONS,
+  TRANSACTION_TYPES,
+  type AdjustmentDirection,
+  type TransactionType,
+} from "@/lib/finance/types";
 
 import {
   dateKeySchema,
@@ -29,31 +34,66 @@ const baseTransactionSchema = z.object({
   description: optionalNoteSchema,
 });
 
-export const transactionInputSchema = baseTransactionSchema.superRefine((value, ctx) => {
+/**
+ * The rules that involve more than one field.
+ *
+ * Kept as a plain function rather than living only inside a Zod refinement
+ * because a partial edit has to be checked *after* it is merged onto the stored
+ * row — sending `{ amount }` alone must not be rejected for having no category,
+ * and must still be rejected if the merged result is an expense without one.
+ *
+ * Returns a field-keyed map so the same messages can land on the same inputs
+ * whether they came from a create or an edit. Empty means valid.
+ */
+export function findTransactionShapeErrors(value: {
+  type: TransactionType;
+  categoryId: string | null;
+  adjustmentDirection: AdjustmentDirection | null;
+}): Record<string, string> {
+  const errors: Record<string, string> = {};
+
   if (value.type === "expense" && !value.categoryId) {
-    ctx.addIssue({ code: "custom", path: ["categoryId"], message: "Choose a category." });
+    errors.categoryId = "Choose a category.";
   }
 
   if (value.type === "adjustment" && !value.adjustmentDirection) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["adjustmentDirection"],
-      message: "Say whether this adds money or takes it away.",
-    });
+    errors.adjustmentDirection = "Say whether this adds money or takes it away.";
   }
 
   // Direction is meaningful only for adjustments; carrying it on other types
   // would let the same amount be interpreted two ways.
   if (value.type !== "adjustment" && value.adjustmentDirection) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["adjustmentDirection"],
-      message: "Only adjustments have a direction.",
-    });
+    errors.adjustmentDirection = "Only adjustments have a direction.";
+  }
+
+  return errors;
+}
+
+export const transactionInputSchema = baseTransactionSchema.superRefine((value, ctx) => {
+  for (const [path, message] of Object.entries(findTransactionShapeErrors(value))) {
+    ctx.addIssue({ code: "custom", path: [path], message });
   }
 });
 
 export type TransactionInput = z.output<typeof transactionInputSchema>;
+
+/**
+ * A partial edit.
+ *
+ * Only the fields present are changed; the cross-field rules are applied to the
+ * merged result by the route handler, since neither this schema nor the caller
+ * can see the row being edited.
+ */
+export const transactionPatchSchema = z.object({
+  type: transactionTypeSchema.optional(),
+  amount: positiveAmountSchema.optional(),
+  date: dateKeySchema.optional(),
+  categoryId: uuidSchema.nullable().optional(),
+  adjustmentDirection: adjustmentDirectionSchema.nullable().optional(),
+  description: optionalNoteSchema.optional(),
+});
+
+export type TransactionPatch = z.output<typeof transactionPatchSchema>;
 
 /**
  * The Add/Edit Transaction form.

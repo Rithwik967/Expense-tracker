@@ -1,7 +1,10 @@
 import { handleRoute, jsonOk, readJsonBody } from "@/lib/api/response";
 import { getRepository } from "@/lib/data";
 import { DataError } from "@/lib/data/errors";
-import { transactionInputSchema } from "@/lib/validations/transaction";
+import {
+  findTransactionShapeErrors,
+  transactionPatchSchema,
+} from "@/lib/validations/transaction";
 
 /**
  * Editing and deleting.
@@ -25,26 +28,43 @@ export async function GET(
   });
 }
 
+/**
+ * A partial edit, merged onto the stored row.
+ *
+ * The form always sends every field, but a caller that wants to change only an
+ * amount should not have to restate the category — and the cross-field rules
+ * still have to hold for the result, so they are checked against the merge
+ * rather than against the request.
+ */
 export async function PATCH(
   request: Request,
   context: RouteContext<"/api/transactions/[id]">,
 ): Promise<Response> {
   return handleRoute(async () => {
     const { id } = await context.params;
-    const body = await readJsonBody(request);
-    const input = transactionInputSchema.parse(body);
+    const patch = transactionPatchSchema.parse(await readJsonBody(request));
 
     const repository = await getRepository();
-    const updated = await repository.updateTransaction(id, {
-      date: input.date,
-      type: input.type,
-      amount: input.amount,
-      adjustmentDirection: input.adjustmentDirection,
-      categoryId: input.categoryId,
-      description: input.description,
-    });
+    const existing = await repository.getTransaction(id);
+    if (!existing) throw DataError.notFound("That transaction");
 
-    return jsonOk(updated);
+    const merged = {
+      date: patch.date ?? existing.date,
+      type: patch.type ?? existing.type,
+      amount: patch.amount ?? existing.amount,
+      adjustmentDirection:
+        patch.adjustmentDirection !== undefined
+          ? patch.adjustmentDirection
+          : existing.adjustmentDirection,
+      categoryId: patch.categoryId !== undefined ? patch.categoryId : existing.categoryId,
+      description: patch.description !== undefined ? patch.description : existing.description,
+    };
+
+    const errors = findTransactionShapeErrors(merged);
+    const firstError = Object.values(errors)[0];
+    if (firstError) throw DataError.validation(firstError, errors);
+
+    return jsonOk(await repository.updateTransaction(id, merged));
   });
 }
 
