@@ -10,10 +10,15 @@
 #
 # DATABASE_URL defaults to $SUPABASE_DB_URL, then to a local database named
 # `spending_tracker`.
+#
+# The default deliberately names no user or host: psql then connects over the
+# Unix socket as the invoking account, which is how a stock local Postgres
+# install is actually reachable. Hard-coding `postgres@localhost` would send it
+# over TCP and demand a password nobody has set.
 
 set -euo pipefail
 
-DB_URL="${1:-${SUPABASE_DB_URL:-postgresql://postgres@localhost/spending_tracker}}"
+DB_URL="${1:-${SUPABASE_DB_URL:-spending_tracker}}"
 MIGRATIONS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/supabase/migrations"
 SEED_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/supabase/seed.sql"
 
