@@ -167,9 +167,27 @@ let cache: StoreShape | null = null;
 /** Serialises writes so two concurrent requests cannot clobber the file. */
 let writeChain: Promise<unknown> = Promise.resolve();
 
+/**
+ * In-flight first read.
+ *
+ * The first request to arrive typically asks for several things at once, and
+ * without this every one of them would seed and write the file concurrently.
+ */
+let loadInFlight: Promise<StoreShape> | null = null;
+
 async function loadStore(): Promise<StoreShape> {
   if (cache) return cache;
 
+  if (!loadInFlight) {
+    loadInFlight = readOrSeedStore().finally(() => {
+      loadInFlight = null;
+    });
+  }
+
+  return loadInFlight;
+}
+
+async function readOrSeedStore(): Promise<StoreShape> {
   try {
     const contents = await readFile(STORE_PATH, "utf8");
     const parsed = JSON.parse(contents) as StoreShape;
@@ -193,8 +211,10 @@ async function loadStore(): Promise<StoreShape> {
 
 async function persist(store: StoreShape): Promise<void> {
   await mkdir(STORE_DIRECTORY, { recursive: true });
-  // Write then rename so a crash mid-write cannot leave a truncated file.
-  const temporary = `${STORE_PATH}.${process.pid}.tmp`;
+  // Write then rename so a crash mid-write cannot leave a truncated file. The
+  // name is unique per write: two writes sharing one would have the first
+  // rename pull the file out from under the second.
+  const temporary = `${STORE_PATH}.${randomUUID()}.tmp`;
   await writeFile(temporary, `${JSON.stringify(store, null, 2)}\n`, "utf8");
   await rename(temporary, STORE_PATH);
 }

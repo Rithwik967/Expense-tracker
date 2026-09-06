@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 /*
+ * Dark mode is driven by a class on <html> rather than the media query, because
+ * the appearance setting lets the user override what the operating system says.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * Design tokens.
  *
  * Every colour is declared as a semantic token so that light and dark themes
@@ -84,6 +90,12 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    color-scheme: light;
+  }
+
+  /* Native controls — date pickers, scrollbars — need to be told too. */
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
