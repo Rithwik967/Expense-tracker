@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens.
+ *
+ * Every colour is declared as a semantic token so that light and dark themes
+ * stay in lockstep. Components must reference the semantic name (`bg-surface`,
+ * `text-ink-muted`, `text-negative`) rather than a raw palette value.
+ */
+
+@theme {
+  --color-canvas: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef0f4;
+  --color-surface-raised: #ffffff;
+  --color-border: #e0e4ea;
+  --color-border-strong: #cbd2dc;
+
+  --color-ink: #10131a;
+  --color-ink-muted: #5b6472;
+  --color-ink-subtle: #8b94a3;
+  --color-ink-inverse: #ffffff;
+
+  --color-brand: #0d9488;
+  --color-brand-strong: #0f766e;
+  --color-brand-soft: #d6f2ee;
+  --color-brand-ink: #0b5f57;
+
+  --color-positive: #15803d;
+  --color-positive-soft: #dcfce7;
+  --color-negative: #be123c;
+  --color-negative-soft: #ffe4e9;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef0d5;
+  --color-info: #1d4ed8;
+  --color-info-soft: #dfe8ff;
+
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --shadow-card: 0 1px 2px rgb(16 19 26 / 0.04), 0 1px 3px rgb(16 19 26 / 0.06);
+  --shadow-raised: 0 4px 16px rgb(16 19 26 / 0.08);
+  --shadow-nav: 0 -1px 0 rgb(16 19 26 / 0.06);
+}
+
+@layer theme {
+  .dark {
+    --color-canvas: #0a0c10;
+    --color-surface: #14171e;
+    --color-surface-muted: #1c202a;
+    --color-surface-raised: #1a1e27;
+    --color-border: #262b36;
+    --color-border-strong: #363d4b;
+
+    --color-ink: #f2f4f8;
+    --color-ink-muted: #99a2b2;
+    --color-ink-subtle: #6d7686;
+    --color-ink-inverse: #0a0c10;
+
+    --color-brand: #2dd4bf;
+    --color-brand-strong: #5eead4;
+    --color-brand-soft: #12312f;
+    --color-brand-ink: #99f6e4;
+
+    --color-positive: #4ade80;
+    --color-positive-soft: #0f2c1c;
+    --color-negative: #fb7185;
+    --color-negative-soft: #3b1220;
+    --color-warning: #fbbf24;
+    --color-warning-soft: #33240a;
+    --color-info: #93b4fd;
+    --color-info-soft: #131f3a;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-raised: 0 4px 20px rgb(0 0 0 / 0.5);
+    --shadow-nav: 0 -1px 0 rgb(255 255 255 / 0.06);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    /* Never allow a stray wide child to create a horizontal scrollbar on mobile. */
+    overflow-x: hidden;
+  }
+
+  /* Amounts are compared column-to-column constantly; lock the digit widths. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-soft);
+    color: var(--color-brand-ink);
+  }
+}
+
+@layer utilities {
+  /* Home-screen PWAs sit under the notch and over the gesture bar. */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
