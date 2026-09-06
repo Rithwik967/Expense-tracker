@@ -41,3 +41,8 @@ yarn-error.log*
 
 # local development data store (used when Supabase is not configured)
 /.data
+
+# editor / agent local files (not part of the deployed app)
+.agents/
+.cursor/mcp.json
+skills-lock.json

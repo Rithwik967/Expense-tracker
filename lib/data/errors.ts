@@ -8,6 +8,7 @@
  */
 
 export type DataErrorCode =
+  | "unauthorized"
   | "not_found"
   | "validation"
   | "conflict"
@@ -28,6 +29,10 @@ export class DataError extends Error {
     this.details = options?.details;
   }
 
+  static unauthorized(message = "Sign in to continue."): DataError {
+    return new DataError("unauthorized", message);
+  }
+
   static notFound(what: string): DataError {
     return new DataError("not_found", `${what} could not be found.`);
   }
@@ -46,6 +51,7 @@ export class DataError extends Error {
 }
 
 const STATUS_BY_CODE: Record<DataErrorCode, number> = {
+  unauthorized: 401,
   not_found: 404,
   validation: 422,
   conflict: 409,
@@ -101,9 +107,10 @@ const CONSTRAINT_MESSAGES: Record<string, string> = {
   transactions_adjustment_direction_valid:
     "An adjustment must be either a credit or a debit.",
   transactions_type_valid: "That is not a valid transaction type.",
-  categories_name_unique_idx: "A category with that name already exists.",
+  app_settings_owner_unique_idx: "Settings already exist.",
+  categories_owner_name_unique_idx: "A category with that name already exists.",
   categories_name_not_empty: "A category needs a name.",
-  monthly_budgets_month_start_unique: "A budget already exists for that month.",
+  monthly_budgets_owner_month_unique: "A budget already exists for that month.",
   monthly_budgets_budget_non_negative: "A monthly budget cannot be negative.",
   monthly_budgets_allowance_non_negative: "A daily allowance cannot be negative.",
   monthly_budgets_month_start_is_first_of_month:

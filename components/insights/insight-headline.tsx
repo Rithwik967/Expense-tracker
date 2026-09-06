@@ -27,7 +27,7 @@ export function InsightHeadline({ headline }: { headline: Headline }) {
   return (
     <p
       className={cn(
-        "flex items-start gap-2 rounded-card px-4 py-3 text-sm font-medium",
+        "flex items-start gap-2 rounded-2xl px-4 py-3 text-sm font-medium",
         className,
       )}
     >

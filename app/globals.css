@@ -7,82 +7,93 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Design tokens.
+ * Design tokens — mapped from the Stitch Daily Allowance Tracker system.
  *
- * Every colour is declared as a semantic token so that light and dark themes
- * stay in lockstep. Components must reference the semantic name (`bg-surface`,
- * `text-ink-muted`, `text-negative`) rather than a raw palette value.
+ * Components must reference the semantic name (`bg-surface`, `text-ink-muted`,
+ * `text-negative`) rather than a raw palette value.
  */
 
 @theme {
-  --color-canvas: #f4f5f7;
-  --color-surface: #ffffff;
-  --color-surface-muted: #eef0f4;
+  --color-canvas: #fbf8fa;
+  --color-surface: #fbf8fa;
+  --color-surface-muted: #f0edef;
   --color-surface-raised: #ffffff;
-  --color-border: #e0e4ea;
-  --color-border-strong: #cbd2dc;
+  --color-surface-low: #f5f3f4;
+  --color-surface-high: #eae7e9;
+  --color-border: #e4e2e3;
+  --color-border-strong: #c5c6cd;
 
-  --color-ink: #10131a;
-  --color-ink-muted: #5b6472;
-  --color-ink-subtle: #8b94a3;
+  --color-ink: #1b1b1d;
+  --color-ink-muted: #45474c;
+  --color-ink-subtle: #75777d;
   --color-ink-inverse: #ffffff;
 
-  --color-brand: #0d9488;
-  --color-brand-strong: #0f766e;
-  --color-brand-soft: #d6f2ee;
-  --color-brand-ink: #0b5f57;
+  --color-brand: #091426;
+  --color-brand-strong: #1e293b;
+  --color-brand-soft: #d8e3fb;
+  --color-brand-ink: #111c2d;
 
-  --color-positive: #15803d;
-  --color-positive-soft: #dcfce7;
-  --color-negative: #be123c;
-  --color-negative-soft: #ffe4e9;
-  --color-warning: #b45309;
-  --color-warning-soft: #fef0d5;
-  --color-info: #1d4ed8;
-  --color-info-soft: #dfe8ff;
+  --color-positive: #006c49;
+  --color-positive-soft: #6cf8bb;
+  --color-negative: #ba1a1a;
+  --color-negative-soft: #ffdad6;
+  --color-warning: #c88000;
+  --color-warning-soft: #ffddb8;
+  --color-info: #3c475a;
+  --color-info-soft: #d8e3fb;
 
-  --radius-card: 1rem;
+  --color-tertiary: #201100;
+  --color-tertiary-container: #3c2300;
+  --color-on-tertiary: #c88000;
+
+  --radius-card: 0.75rem;
   --radius-control: 0.75rem;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --shadow-card: 0 1px 2px rgb(16 19 26 / 0.04), 0 1px 3px rgb(16 19 26 / 0.06);
-  --shadow-raised: 0 4px 16px rgb(16 19 26 / 0.08);
-  --shadow-nav: 0 -1px 0 rgb(16 19 26 / 0.06);
+  --shadow-card: 0 1px 8px rgb(0 0 0 / 0.04);
+  --shadow-raised: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-nav: 0 -1px 8px rgb(0 0 0 / 0.04);
 }
 
 @layer theme {
   .dark {
-    --color-canvas: #0a0c10;
-    --color-surface: #14171e;
-    --color-surface-muted: #1c202a;
-    --color-surface-raised: #1a1e27;
-    --color-border: #262b36;
-    --color-border-strong: #363d4b;
+    --color-canvas: #121316;
+    --color-surface: #121316;
+    --color-surface-muted: #1c1d21;
+    --color-surface-raised: #1a1b1f;
+    --color-surface-low: #18191d;
+    --color-surface-high: #26272c;
+    --color-border: #2c2d32;
+    --color-border-strong: #45474c;
 
-    --color-ink: #f2f4f8;
-    --color-ink-muted: #99a2b2;
-    --color-ink-subtle: #6d7686;
-    --color-ink-inverse: #0a0c10;
+    --color-ink: #f3f0f2;
+    --color-ink-muted: #c5c6cd;
+    --color-ink-subtle: #8b8d94;
+    --color-ink-inverse: #121316;
 
-    --color-brand: #2dd4bf;
-    --color-brand-strong: #5eead4;
-    --color-brand-soft: #12312f;
-    --color-brand-ink: #99f6e4;
+    --color-brand: #bcc7de;
+    --color-brand-strong: #d8e3fb;
+    --color-brand-soft: #1e293b;
+    --color-brand-ink: #d8e3fb;
 
-    --color-positive: #4ade80;
-    --color-positive-soft: #0f2c1c;
-    --color-negative: #fb7185;
-    --color-negative-soft: #3b1220;
-    --color-warning: #fbbf24;
-    --color-warning-soft: #33240a;
-    --color-info: #93b4fd;
-    --color-info-soft: #131f3a;
+    --color-positive: #4edea3;
+    --color-positive-soft: #003824;
+    --color-negative: #ffb4ab;
+    --color-negative-soft: #93000a;
+    --color-warning: #ffb95f;
+    --color-warning-soft: #3c2300;
+    --color-info: #bcc7de;
+    --color-info-soft: #1e293b;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-raised: 0 4px 20px rgb(0 0 0 / 0.5);
-    --shadow-nav: 0 -1px 0 rgb(255 255 255 / 0.06);
+    --color-tertiary: #ffb95f;
+    --color-tertiary-container: #3c2300;
+    --color-on-tertiary: #ffb95f;
+
+    --shadow-card: 0 1px 8px rgb(0 0 0 / 0.4);
+    --shadow-raised: 0 8px 24px rgb(0 0 0 / 0.5);
+    --shadow-nav: 0 -1px 8px rgb(0 0 0 / 0.4);
   }
 }
 
@@ -93,7 +104,6 @@
     color-scheme: light;
   }
 
-  /* Native controls — date pickers, scrollbars — need to be told too. */
   html.dark {
     color-scheme: dark;
   }
@@ -101,11 +111,9 @@
   body {
     background-color: var(--color-canvas);
     color: var(--color-ink);
-    /* Never allow a stray wide child to create a horizontal scrollbar on mobile. */
     overflow-x: hidden;
   }
 
-  /* Amounts are compared column-to-column constantly; lock the digit widths. */
   .tabular {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
@@ -124,7 +132,6 @@
 }
 
 @layer utilities {
-  /* Home-screen PWAs sit under the notch and over the gesture bar. */
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
@@ -139,6 +146,14 @@
 
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+
+  .label-caps {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    text-transform: uppercase;
   }
 }
 

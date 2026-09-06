@@ -6,7 +6,6 @@ import * as React from "react";
 import { ListSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { PageHeader } from "@/components/layout/page-header";
 import { useAppData } from "@/components/providers/app-data-provider";
-import { AddTransactionFab } from "@/components/transactions/add-transaction-fab";
 import {
   EMPTY_FILTERS,
   TransactionFilters,
@@ -34,7 +33,7 @@ import { countLabel, formatMonthLabel } from "@/lib/utils/formatting";
  * shared month data rather than patching this list in place.
  */
 export default function TransactionsPage() {
-  const { month, today } = useAppData();
+  const { month } = useAppData();
   const [filters, setFilters] = React.useState<TransactionFiltersValue>(EMPTY_FILTERS);
   const [editing, setEditing] = React.useState<TransactionRecord | null>(null);
 
@@ -126,8 +125,6 @@ export default function TransactionsPage() {
         onClose={() => setEditing(null)}
         transaction={editing}
       />
-
-      <AddTransactionFab initialDate={today ?? undefined} />
     </>
   );
 }

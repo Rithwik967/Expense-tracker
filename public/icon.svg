@@ -1,22 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Budget">
-  <defs>
-    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#14b8a6" />
-      <stop offset="1" stop-color="#0f766e" />
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#brand)" />
-  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-width="30" opacity="0.32">
-    <circle cx="256" cy="256" r="168" stroke-dasharray="88 44" />
-  </g>
-  <text
-    x="256"
-    y="256"
-    fill="#ffffff"
-    font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-    font-size="248"
-    font-weight="700"
-    text-anchor="middle"
-    dominant-baseline="central"
-  >¹</text>
+  <rect width="512" height="512" rx="112" fill="#091426"/>
+  <rect x="148" y="108" width="216" height="96" rx="20" fill="#fbf8fa"/>
+  <rect x="172" y="132" width="96" height="14" rx="7" fill="#091426" opacity="0.16"/>
+  <rect x="108" y="188" width="296" height="216" rx="48" fill="#6cf8bb"/>
+  <path d="M108 252h296" stroke="#006c49" stroke-width="10" opacity="0.22"/>
+  <circle cx="348" cy="296" r="36" fill="#091426"/>
+  <circle cx="348" cy="296" r="16" fill="#c88000"/>
 </svg>

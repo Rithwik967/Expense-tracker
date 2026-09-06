@@ -1,13 +1,11 @@
 "use client";
 
-import { Plus, Receipt } from "lucide-react";
 import Link from "next/link";
 
 import { TransactionRow } from "@/components/transactions/transaction-row";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/states";
 import type { TransactionRecord } from "@/lib/data/types";
+import { Receipt } from "lucide-react";
 
 /**
  * A short list of transactions with its own heading — today's on Home, or the
@@ -31,39 +29,50 @@ export function DayTransactions({
   seeAllHref?: string;
 }) {
   return (
-    <section aria-labelledby="day-transactions-heading">
-      <div className="mb-1.5 flex items-center justify-between gap-3 px-1">
-        <h2 id="day-transactions-heading" className="text-sm font-semibold text-ink">
+    <section aria-labelledby="day-transactions-heading" className="flex flex-col gap-2">
+      <div className="mb-1 flex items-end justify-between gap-3 px-1">
+        <h2 id="day-transactions-heading" className="text-xl font-semibold text-ink">
           {title}
         </h2>
         {seeAllHref ? (
-          <Button variant="link" size="sm" className="h-auto px-0" asChild>
-            <Link href={seeAllHref}>See all</Link>
-          </Button>
+          <Link href={seeAllHref} className="label-caps text-brand">
+            View All
+          </Link>
         ) : null}
       </div>
 
-      <Card className="divide-y divide-border overflow-hidden">
-        {transactions.length === 0 ? (
+      {transactions.length === 0 ? (
+        <div className="rounded-xl bg-surface-raised shadow-card">
           <EmptyState
             icon={Receipt}
             title={emptyTitle}
             description={emptyDescription}
             action={
               onAdd ? (
-                <Button size="sm" variant="outline" onClick={onAdd}>
-                  <Plus aria-hidden />
+                <button
+                  type="button"
+                  onClick={onAdd}
+                  className="text-sm font-medium text-brand underline-offset-4 hover:underline"
+                >
                   Add one
-                </Button>
+                </button>
               ) : undefined
             }
           />
-        ) : (
-          transactions.map((transaction) => (
-            <TransactionRow key={transaction.id} transaction={transaction} onSelect={onSelect} />
-          ))
-        )}
-      </Card>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {transactions.map((transaction) => (
+            <li key={transaction.id}>
+              <TransactionRow
+                transaction={transaction}
+                onSelect={onSelect}
+                className="rounded-xl bg-surface-raised shadow-card"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

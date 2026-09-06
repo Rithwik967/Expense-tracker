@@ -42,14 +42,24 @@ export function TransactionRow({
   const { currency, categoryName, categoryIcon } = useAppData();
   const credit = isCredit(transaction);
 
+  const categoryLabel =
+    transaction.type === "expense" ? categoryName(transaction.categoryId) : null;
+
   const title =
     transaction.type === "expense"
-      ? categoryName(transaction.categoryId)
+      ? transaction.description || categoryLabel || "Expense"
       : transaction.type === "income"
-        ? "Money added"
+        ? transaction.description || "Money added"
         : credit
           ? "Adjustment · adds money"
           : "Adjustment · takes money";
+
+  const subtitle =
+    transaction.type === "expense" && transaction.description
+      ? categoryLabel
+      : transaction.type !== "expense"
+        ? transaction.description
+        : null;
 
   const Icon =
     transaction.type === "adjustment" ? Scale : credit ? ArrowDownLeft : ArrowUpRight;
@@ -59,27 +69,27 @@ export function TransactionRow({
       <span
         aria-hidden
         className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-full text-sm",
-          credit ? "bg-positive-soft text-positive" : "bg-surface-muted text-ink-muted",
+          "flex size-12 shrink-0 items-center justify-center rounded-full text-xl shadow-sm",
+          credit ? "bg-positive-soft text-positive" : "bg-negative-soft text-[#93000a] dark:text-negative",
         )}
       >
         {transaction.type === "expense" ? (
-          <CategoryIcon name={categoryIcon(transaction.categoryId)} />
+          <CategoryIcon name={categoryIcon(transaction.categoryId)} className="size-5" />
         ) : (
           <Icon className="size-4" />
         )}
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-ink">{title}</span>
-        {transaction.description ? (
-          <span className="block truncate text-xs text-ink-muted">{transaction.description}</span>
+        <span className="block truncate text-base font-semibold text-ink">{title}</span>
+        {subtitle ? (
+          <span className="block truncate text-sm text-ink-muted">{subtitle}</span>
         ) : null}
       </span>
 
       <span
         className={cn(
-          "tabular shrink-0 text-sm font-semibold",
+          "tabular shrink-0 text-xl font-semibold",
           credit ? "text-positive" : "text-ink",
         )}
       >
@@ -90,7 +100,7 @@ export function TransactionRow({
 
   if (!onSelect) {
     return (
-      <div className={cn("flex min-h-[56px] items-center gap-3 px-4 py-2.5", className)}>
+      <div className={cn("flex min-h-[72px] items-center gap-4 px-4 py-4", className)}>
         {content}
       </div>
     );
@@ -101,7 +111,7 @@ export function TransactionRow({
       type="button"
       onClick={() => onSelect(transaction)}
       className={cn(
-        "flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-muted",
+        "flex min-h-[72px] w-full items-center gap-4 px-4 py-4 text-left transition-transform active:scale-[0.98]",
         className,
       )}
     >

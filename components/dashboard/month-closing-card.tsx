@@ -1,7 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Amount } from "@/components/ui/money";
 import type { MonthlySummary } from "@/lib/finance/types";
 import { formatMonthLabel } from "@/lib/utils/formatting";
@@ -10,10 +8,6 @@ import { formatMonthLabel } from "@/lib/utils/formatting";
  * Shown in place of the today card when the selected month is not the current
  * one, because "available today" means nothing in a month that has finished or
  * has not started.
- *
- * A finished month reports what it closed at; a future month reports what it
- * will open with and what it has to spend. No month is ever "closed" by the
- * user — the distinction is purely which side of today it falls on.
  */
 export function MonthClosingCard({
   summary,
@@ -24,51 +18,27 @@ export function MonthClosingCard({
 }) {
   const upcoming = !summary.isComplete;
   const closing = summary.projectedEndBalance;
+  const negative = closing < 0;
 
   return (
-    <Card>
-      <CardContent className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-ink-muted">
-              {upcoming ? "Projected to end at" : "Ended at"}
-            </p>
-            <p
-              className={`tabular mt-1 text-3xl font-semibold tracking-tight ${
-                closing < 0 ? "text-negative" : "text-ink"
-              }`}
-            >
-              <Amount value={closing} currency={currency} />
-            </p>
-            <p className="mt-1 text-xs text-ink-subtle">{formatMonthLabel(summary.month)}</p>
-          </div>
-
-          <Badge tone={upcoming ? "info" : closing < 0 ? "negative" : "positive"}>
-            {upcoming ? "Not started" : closing < 0 ? "Overspent" : "Saved"}
-          </Badge>
-        </div>
-
-        <dl className="grid grid-cols-3 gap-3 border-t border-border pt-3">
-          <div className="min-w-0">
-            <dt className="truncate text-xs text-ink-muted">Opened with</dt>
-            <dd className="tabular mt-0.5 text-sm font-semibold text-ink">
-              <Amount value={summary.carryForward} currency={currency} />
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="truncate text-xs text-ink-muted">Allowance</dt>
-            <dd className="tabular mt-0.5 text-sm font-semibold text-ink">
-              <Amount value={summary.allowanceTotal} currency={currency} />
-            </dd>
-          </div>
-          <div className="min-w-0">
-            <dt className="truncate text-xs text-ink-muted">Spent</dt>
-            <dd className="tabular mt-0.5 text-sm font-semibold text-ink">
-              <Amount value={summary.totalSpent} currency={currency} />
-            </dd>
-          </div>
-        </dl>
-      </CardContent>
-    </Card>
+    <div
+      className={
+        negative
+          ? "relative overflow-hidden rounded-3xl bg-negative-soft p-6 text-center text-[#93000a] shadow-[0_8px_24px_rgba(147,0,10,0.08)] dark:text-negative"
+          : "relative overflow-hidden rounded-xl bg-positive-soft p-6 text-center text-positive shadow-md"
+      }
+    >
+      <p className="label-caps opacity-90">
+        {upcoming ? "Projected to end at" : "Ended at"}
+      </p>
+      <p className="tabular my-2 text-[32px] font-bold leading-10 tracking-tight">
+        <Amount value={closing} currency={currency} />
+      </p>
+      <p className="text-sm opacity-80">{formatMonthLabel(summary.month)}</p>
+      <p className="mt-4 text-sm opacity-90">
+        Spent <Amount value={summary.totalSpent} currency={currency} /> of{" "}
+        <Amount value={summary.allowanceTotal} currency={currency} /> allowance
+      </p>
+    </div>
   );
 }

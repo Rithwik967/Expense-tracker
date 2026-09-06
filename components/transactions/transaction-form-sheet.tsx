@@ -1,12 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import * as React from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { useAppData } from "@/components/providers/app-data-provider";
-import { CategorySelect } from "@/components/transactions/category-select";
+import { CategoryGrid } from "@/components/transactions/category-grid";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AmountInput, Field, FieldHint, FieldLabel, Input } from "@/components/ui/field";
@@ -42,7 +42,7 @@ import {
 
 const TYPE_OPTIONS = [
   { value: "expense", label: "Expense" },
-  { value: "income", label: "Money in" },
+  { value: "income", label: "Add money" },
   { value: "adjustment", label: "Adjust" },
 ] as const satisfies readonly { value: TransactionType; label: string }[];
 
@@ -194,11 +194,17 @@ export function TransactionFormSheet({
                 <Trash2 aria-hidden />
               </Button>
             ) : null}
-            <Button variant="outline" block onClick={onClose} disabled={pending}>
-              Cancel
-            </Button>
-            <Button block onClick={onSubmit} disabled={pending}>
-              {pending ? "Saving…" : isEditing ? "Save changes" : "Save"}
+            <Button block onClick={onSubmit} disabled={pending} className="h-14 rounded-xl text-lg">
+              {pending ? (
+                "Saving…"
+              ) : isEditing ? (
+                "Save changes"
+              ) : (
+                <>
+                  <Plus aria-hidden />
+                  {type === "income" ? "Add money" : type === "adjustment" ? "Save adjustment" : "Add Expense"}
+                </>
+              )}
             </Button>
           </div>
         }
@@ -215,15 +221,17 @@ export function TransactionFormSheet({
             label="Transaction type"
             options={TYPE_OPTIONS}
             value={type}
+            tone="pill"
             onChange={(next) => form.setValue("type", next, { shouldValidate: false })}
           />
 
-          <Field error={errors.amount?.message}>
-            <FieldLabel>Amount</FieldLabel>
+          <Field error={errors.amount?.message} className="pt-2">
+            <FieldLabel className="justify-center text-ink-muted">Amount</FieldLabel>
             <AmountInput
               currencySymbol={currencySymbol(currency)}
               placeholder="0"
               autoFocus
+              layout="hero"
               {...form.register("amount")}
             />
           </Field>
@@ -248,7 +256,7 @@ export function TransactionFormSheet({
           {type === "expense" ? (
             <Field error={errors.categoryId?.message}>
               <FieldLabel>Category</FieldLabel>
-              <CategorySelect
+              <CategoryGrid
                 value={categoryId}
                 onChange={(next) => form.setValue("categoryId", next, { shouldValidate: false })}
               />

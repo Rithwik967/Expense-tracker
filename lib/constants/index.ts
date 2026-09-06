@@ -32,14 +32,14 @@ export const PLANNED_STATUS_LABELS: Record<PlannedExpenseStatus, string> = {
 
 /** Chart colours, ordered so adjacent categories stay distinguishable. */
 export const CATEGORY_CHART_COLORS = [
-  "#0d9488",
-  "#6366f1",
+  "#3b82f6",
   "#f59e0b",
-  "#ec4899",
-  "#14b8a6",
-  "#8b5cf6",
   "#ef4444",
-  "#22c55e",
+  "#8b5cf6",
+  "#006c49",
+  "#c88000",
+  "#091426",
+  "#ec4899",
   "#0ea5e9",
   "#a855f7",
 ] as const;

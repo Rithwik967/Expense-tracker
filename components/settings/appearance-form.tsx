@@ -1,63 +1,56 @@
 "use client";
 
 import { Monitor, Moon, Sun } from "lucide-react";
-import * as React from "react";
 
 import { useTheme, type ThemePreference } from "@/components/providers/theme-provider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Segmented } from "@/components/ui/segmented";
+import { cn } from "@/lib/utils/cn";
 
 /**
  * Appearance.
  *
- * The preference is stored on the device rather than in the database: it
- * describes this screen, not the user's money, and a phone in a dark room and a
- * laptop in daylight should be allowed to disagree.
+ * The preference is stored on the device rather than in the database.
  */
 const OPTIONS = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-] as const satisfies ReadonlyArray<{ value: ThemePreference; label: string }>;
-
-const ICONS: Record<ThemePreference, typeof Sun> = {
-  light: Sun,
-  dark: Moon,
-  system: Monitor,
-};
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const satisfies ReadonlyArray<{
+  value: ThemePreference;
+  label: string;
+  icon: typeof Sun;
+}>;
 
 export function AppearanceForm() {
-  const { preference, resolved, setPreference } = useTheme();
-  const Icon = ICONS[preference];
+  const { preference, setPreference } = useTheme();
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="min-w-0">
-          <CardTitle>Appearance</CardTitle>
-          <p className="mt-0.5 text-xs text-ink-muted">Saved on this device.</p>
+    <div className="rounded-xl bg-surface-muted p-4 shadow-card">
+      <div className="mb-3 flex items-center gap-4">
+        <div className="flex size-10 items-center justify-center rounded-full bg-brand-soft/40 text-ink-muted">
+          <Sun className="size-5" aria-hidden />
         </div>
-        <span
-          aria-hidden
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-ink-muted"
-        >
-          <Icon className="size-4" />
-        </span>
-      </CardHeader>
-
-      <CardContent className="space-y-2">
-        <Segmented
-          label="Theme"
-          options={OPTIONS}
-          value={preference}
-          onChange={setPreference}
-        />
-        <p className="text-xs text-ink-subtle">
-          {preference === "system"
-            ? `Following your device, which is currently ${resolved}.`
-            : `Always ${preference}.`}
-        </p>
-      </CardContent>
-    </Card>
+        <p className="text-base font-medium text-ink">Theme Preference</p>
+      </div>
+      <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface-low p-1">
+        {OPTIONS.map((option) => {
+          const Icon = option.icon;
+          const selected = preference === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setPreference(option.value)}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-md px-2 py-3 transition-all",
+                selected ? "bg-surface text-ink shadow-sm" : "text-ink-subtle hover:bg-surface/50",
+              )}
+            >
+              <Icon className="size-5" aria-hidden />
+              <span className="label-caps">{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

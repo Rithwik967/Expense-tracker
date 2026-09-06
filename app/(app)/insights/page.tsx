@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartColumn } from "lucide-react";
+import { ChartColumn, PartyPopper } from "lucide-react";
 import * as React from "react";
 
 import { BalanceChart } from "@/components/insights/balance-chart";
@@ -14,22 +14,20 @@ import {
   type SpendingChartMode,
 } from "@/components/insights/spending-chart";
 import { WeeklyAnalysis } from "@/components/insights/weekly-analysis";
-import { PageHeader } from "@/components/layout/page-header";
 import { useAppData } from "@/components/providers/app-data-provider";
-import { Card, CardContent } from "@/components/ui/card";
 import { Amount } from "@/components/ui/money";
+import { Progress } from "@/components/ui/progress";
 import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states";
 import { useInsights } from "@/hooks/use-insights";
-import { toMajorNumber } from "@/lib/finance/money";
+import { getRemainingBudget } from "@/lib/finance/monthly-balance";
+import { fromMinor, toMajorNumber } from "@/lib/finance/money";
 import { formatMonthLabel } from "@/lib/utils/formatting";
 
 /**
  * Insights.
  *
  * Everything on this screen is a reshaping of the month payload the provider
- * already fetched — the same one Home and Calendar render. No total is
- * recomputed here, which is the only way "Insights says ₹7,420" and "Home says
- * ₹7,420" can be guaranteed rather than hoped for.
+ * already fetched — the same one Home and Calendar render.
  */
 export default function InsightsPage() {
   const { currency, month } = useAppData();
@@ -38,36 +36,83 @@ export default function InsightsPage() {
 
   const { resource, summary } = insights;
   const hasExpenses = insights.categories.length > 0;
+  const remaining = summary ? getRemainingBudget(summary) : fromMinor(0);
+  const spentRatio =
+    summary && summary.monthlyBudget > 0
+      ? Math.round((summary.totalSpent / summary.monthlyBudget) * 100)
+      : 0;
 
   return (
     <>
-      <PageHeader
-        title="Insights"
-        description="How this month is tracking against your allowance."
-        withMonthSwitcher
-      />
-
       {resource.error ? (
         <ErrorState message={resource.error.message} onRetry={resource.reload} />
       ) : resource.isLoading || !summary ? (
         <div className="space-y-3" aria-busy="true">
-          <Skeleton className="h-14 w-full rounded-card" />
-          <Skeleton className="h-44 w-full rounded-card" />
-          <Skeleton className="h-64 w-full rounded-card" />
-          <Skeleton className="h-64 w-full rounded-card" />
+          <Skeleton className="h-36 w-full rounded-2xl" />
+          <Skeleton className="h-44 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-6">
+          <div className="relative overflow-hidden rounded-2xl bg-surface-muted p-6 shadow-card">
+            <div className="pointer-events-none absolute -top-10 -right-10 size-32 rounded-full bg-brand/5 blur-2xl" />
+            <p className="label-caps relative z-10 text-ink-subtle">
+              {month ? `${formatMonthLabel(month)} Overview` : "Overview"}
+            </p>
+            <p className="relative z-10 mt-1 flex items-end gap-2">
+              <span className="tabular text-[32px] font-bold leading-10 text-brand">
+                <Amount value={summary.totalSpent} currency={currency} />
+              </span>
+              <span className="mb-1 text-base text-ink-muted">
+                / <Amount value={summary.monthlyBudget} currency={currency} />
+              </span>
+            </p>
+            <Progress
+              value={summary.totalSpent}
+              max={summary.monthlyBudget}
+              label={`${spentRatio}% spent`}
+              className="relative z-10 mt-3 h-2"
+            />
+            <div className="relative z-10 mt-1 flex items-center justify-between text-sm text-ink-muted">
+              <span>{spentRatio}% spent</span>
+              <span className="font-medium text-positive">
+                <Amount value={remaining} currency={currency} /> left
+              </span>
+            </div>
+          </div>
+
           <InsightHeadline headline={insights.headline} />
 
-          <OverviewGrid
-            summary={summary}
-            averageDailySpend={insights.averageDailySpend ?? summary.totalSpent}
-            highestSpendingDay={insights.highestSpendingDay}
-            largestCategory={insights.largestCategory}
-            funFund={insights.funFund ?? summary.extraMoney}
-            currency={currency}
-          />
+          <ChartCard title="Balance Over Time">
+            <BalanceChart data={insights.balance} currency={currency} />
+          </ChartCard>
+
+          <div className="flex items-center gap-4 rounded-2xl bg-positive-soft p-4 text-positive shadow-md">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/30">
+              <PartyPopper className="size-7" aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="mb-1 text-base font-bold">
+                Fun Potential: <Amount value={insights.funFund ?? summary.extraMoney} currency={currency} />
+              </h3>
+              <p className="text-sm leading-snug opacity-90">
+                Accumulated surplus carried in from earlier months. Already part of your available
+                balance.
+              </p>
+            </div>
+          </div>
+
+          <ChartCard title="Category Breakdown">
+            {hasExpenses ? (
+              <CategoryBreakdown categories={insights.categories} currency={currency} />
+            ) : (
+              <EmptyState
+                icon={ChartColumn}
+                title="No categories to compare"
+                description="Category shares appear once you have recorded an expense."
+              />
+            )}
+          </ChartCard>
 
           <ChartCard
             title="Spending"
@@ -94,42 +139,21 @@ export default function InsightsPage() {
             )}
           </ChartCard>
 
-          <ChartCard
-            title="Available balance"
-            caption="Your running balance, including days still to come."
-          >
-            <BalanceChart data={insights.balance} currency={currency} />
-          </ChartCard>
-
-          <ChartCard title="Where it went" caption="Expenses by category, largest first.">
-            {hasExpenses ? (
-              <CategoryBreakdown categories={insights.categories} currency={currency} />
-            ) : (
-              <EmptyState
-                icon={ChartColumn}
-                title="No categories to compare"
-                description="Category shares appear once you have recorded an expense."
-              />
-            )}
-          </ChartCard>
-
-          <ChartCard title="By week" caption="Allowance generated against what was spent.">
+          <section>
+            <h2 className="mb-2 px-1 text-xl font-semibold text-ink">Weekly Analysis</h2>
             <WeeklyAnalysis weeks={insights.weeks} currency={currency} />
-          </ChartCard>
+          </section>
 
-          <Card>
-            <CardContent className="space-y-1">
-              <p className="text-xs font-medium text-ink-muted">Fun Fund</p>
-              <p className="tabular text-2xl font-semibold text-ink">
-                <Amount value={insights.funFund ?? summary.extraMoney} currency={currency} />
-              </p>
-              <p className="text-xs text-ink-subtle">
-                Accumulated surplus carried in from earlier months. It is already part of your
-                available balance — spending it is an ordinary expense, not a withdrawal from a
-                separate pot.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="lg:block hidden">
+            <OverviewGrid
+              summary={summary}
+              averageDailySpend={insights.averageDailySpend ?? summary.totalSpent}
+              highestSpendingDay={insights.highestSpendingDay}
+              largestCategory={insights.largestCategory}
+              funFund={insights.funFund ?? summary.extraMoney}
+              currency={currency}
+            />
+          </div>
         </div>
       )}
     </>

@@ -21,6 +21,7 @@ export function Segmented<T extends string>({
   onChange,
   label,
   size = "md",
+  tone = "default",
   className,
 }: {
   options: readonly SegmentedOption<T>[];
@@ -28,6 +29,7 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void;
   label: string;
   size?: "sm" | "md";
+  tone?: "default" | "pill";
   className?: string;
 }) {
   const refs = React.useRef<Array<HTMLButtonElement | null>>([]);
@@ -43,7 +45,8 @@ export function Segmented<T extends string>({
       role="radiogroup"
       aria-label={label}
       className={cn(
-        "inline-flex w-full rounded-control bg-surface-muted p-1",
+        "inline-flex w-full p-1",
+        tone === "pill" ? "rounded-full bg-surface-high shadow-inner" : "rounded-control bg-surface-muted",
         className,
       )}
     >
@@ -70,10 +73,15 @@ export function Segmented<T extends string>({
               }
             }}
             className={cn(
-              "flex-1 rounded-[calc(var(--radius-control)-2px)] px-3 font-medium transition-colors",
-              size === "sm" ? "h-8 text-xs" : "h-10 text-sm",
+              "flex-1 px-3 font-medium transition-all",
+              tone === "pill"
+                ? "rounded-full label-caps tracking-wider"
+                : "rounded-[calc(var(--radius-control)-2px)]",
+              size === "sm" ? "h-8 text-xs" : tone === "pill" ? "h-10 text-xs" : "h-10 text-sm",
               selected
-                ? "bg-surface text-ink shadow-card"
+                ? tone === "pill"
+                  ? "bg-brand text-ink-inverse shadow-sm"
+                  : "bg-surface text-ink shadow-card"
                 : "text-ink-muted hover:text-ink",
             )}
           >

@@ -3,33 +3,24 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/types/database";
 
+import { AUTH_COOKIE_OPTIONS, persistAuthCookies, setAuthCookie } from "./auth-cookies";
 import { readSupabaseCredentials } from "./env";
 
+const PUBLIC_PATHS = new Set(["/login", "/signup"]);
+
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  return pathname.startsWith("/auth/");
+}
+
 /**
- * Session refresh helper for request interception.
+ * Refresh the Auth cookies and send unauthenticated visitors to sign in.
  *
- * Nothing calls this yet: the app is single-user and unauthenticated, so there
- * is no session to keep alive and adding a request-level hook would cost every
- * navigation for no benefit.
+ * Called from `proxy.ts` on every non-static request. Page protection here is
+ * optimistic; route handlers still call `getClaims()` before reading data.
  *
- * It exists as the wiring point for when authentication is added. At that
- * point, create `proxy.ts` at the project root and delegate to it:
- *
- * ```ts
- * // proxy.ts
- * import { updateSupabaseSession } from '@/lib/supabase/middleware'
- *
- * export async function proxy(request: NextRequest) {
- *   return updateSupabaseSession(request)
- * }
- *
- * export const config = {
- *   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
- * }
- * ```
- *
- * Note for Next.js 16: the convention is `proxy.ts` with an exported `proxy`
- * function. The old `middleware.ts` filename is deprecated.
+ * Auth cookies are always written with a long Max-Age so closing a tab or
+ * window does not sign the user out. Logging out still clears them.
  */
 export async function updateSupabaseSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });
@@ -38,24 +29,69 @@ export async function updateSupabaseSession(request: NextRequest): Promise<NextR
   if (!credentials) return response;
 
   const supabase = createServerClient<Database>(credentials.url, credentials.anonKey, {
+    cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headers) {
         for (const { name, value } of cookiesToSet) {
           request.cookies.set(name, value);
         }
         response = NextResponse.next({ request });
         for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
+          setAuthCookie(response.cookies, name, value, options);
+        }
+        if (headers) {
+          for (const [key, value] of Object.entries(headers)) {
+            response.headers.set(key, value);
+          }
         }
       },
     },
   });
 
-  // Touching the user refreshes an expiring token and writes the new cookies.
-  await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const signedIn = Boolean(data?.claims);
+  const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith("/api/");
+
+  if (signedIn) {
+    const alreadyWritten = new Set(response.cookies.getAll().map((cookie) => cookie.name));
+    persistAuthCookies(
+      response.cookies,
+      request.cookies.getAll().filter((cookie) => !alreadyWritten.has(cookie.name)),
+    );
+  }
+
+  if (!signedIn && !isPublicPath(pathname) && !isApi) {
+    const login = request.nextUrl.clone();
+    login.pathname = "/login";
+    login.search = "";
+    if (pathname !== "/home") {
+      login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+    }
+    const redirect = NextResponse.redirect(login);
+    copyResponseCookies(response, redirect);
+    return redirect;
+  }
+
+  if (signedIn && (pathname === "/login" || pathname === "/signup")) {
+    const home = request.nextUrl.clone();
+    home.pathname = "/home";
+    home.search = "";
+    const redirect = NextResponse.redirect(home);
+    copyResponseCookies(response, redirect);
+    persistAuthCookies(redirect.cookies, request.cookies.getAll());
+    return redirect;
+  }
 
   return response;
+}
+
+function copyResponseCookies(from: NextResponse, to: NextResponse): void {
+  for (const cookie of from.cookies.getAll()) {
+    to.cookies.set(cookie);
+  }
+  persistAuthCookies(to.cookies, from.cookies.getAll());
 }

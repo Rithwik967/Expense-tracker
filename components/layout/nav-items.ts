@@ -8,13 +8,14 @@ import {
 } from "lucide-react";
 
 /**
- * The five destinations, shared by the bottom bar on a phone and the inline nav
- * on a wide screen so the two can never fall out of step.
+ * Destinations shared by the phone bar and the wide-screen header so the two
+ * can never fall out of step. Transactions stay reachable from Home / Calendar
+ * ("View all") and from the desktop header — the Stitch shell puts Add in the
+ * middle of the phone bar instead of a fifth tab.
  */
 export interface NavItem {
   readonly href: string;
   readonly label: string;
-  /** Shorter form for the bottom bar, where 320px has to fit five labels. */
   readonly shortLabel: string;
   readonly icon: LucideIcon;
 }
@@ -23,6 +24,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/home", label: "Home", shortLabel: "Home", icon: House },
   { href: "/calendar", label: "Calendar", shortLabel: "Calendar", icon: CalendarDays },
   { href: "/insights", label: "Insights", shortLabel: "Insights", icon: ChartColumn },
-  { href: "/transactions", label: "Transactions", shortLabel: "History", icon: Receipt },
   { href: "/settings", label: "Settings", shortLabel: "Settings", icon: Settings },
+];
+
+export const DESKTOP_NAV_ITEMS: readonly NavItem[] = [
+  ...NAV_ITEMS.slice(0, 3),
+  { href: "/transactions", label: "Transactions", shortLabel: "History", icon: Receipt },
+  NAV_ITEMS[3],
 ];

@@ -160,9 +160,35 @@ export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLS
 export function AmountInput({
   className,
   currencySymbol = "₹",
+  layout = "default",
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { currencySymbol?: string }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  currencySymbol?: string;
+  layout?: "default" | "hero";
+}) {
   const field = useFieldContext();
+  if (layout === "hero") {
+    return (
+      <div className="flex items-center justify-center gap-1">
+        <span aria-hidden className="text-4xl font-bold text-ink/80">
+          {currencySymbol}
+        </span>
+        <input
+          id={field?.id}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          aria-invalid={field?.hasError || undefined}
+          aria-describedby={describedBy(field)}
+          className={cn(
+            "tabular w-full max-w-xs bg-transparent p-0 text-center text-4xl font-bold text-ink outline-none placeholder:text-ink-subtle",
+            className,
+          )}
+          {...props}
+        />
+      </div>
+    );
+  }
   return (
     <div className="relative">
       <span

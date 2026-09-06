@@ -28,7 +28,7 @@ export type Database = {
           default_monthly_budget: number;
           default_daily_allowance: number | null;
           month_start_day: number;
-          owner_id: string | null;
+          owner_id: string;
           created_at: string;
           updated_at: string;
         };
@@ -38,7 +38,7 @@ export type Database = {
           default_monthly_budget?: number;
           default_daily_allowance?: number | null;
           month_start_day?: number;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -48,7 +48,57 @@ export type Database = {
           default_monthly_budget?: number;
           default_daily_allowance?: number | null;
           month_start_day?: number;
-          owner_id?: string | null;
+          owner_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      profiles: {
+        Row: {
+          id: string;
+          display_name: string;
+          avatar_url: string | null;
+          phone: string | null;
+          mindset_note: string | null;
+          start_of_day: string;
+          notify_morning: boolean;
+          notify_evening: boolean;
+          notify_overspend: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          display_name: string;
+          avatar_url?: string | null;
+          phone?: string | null;
+          mindset_note?: string | null;
+          start_of_day?: string;
+          notify_morning?: boolean;
+          notify_evening?: boolean;
+          notify_overspend?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          display_name?: string;
+          avatar_url?: string | null;
+          phone?: string | null;
+          mindset_note?: string | null;
+          start_of_day?: string;
+          notify_morning?: boolean;
+          notify_evening?: boolean;
+          notify_overspend?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -62,7 +112,7 @@ export type Database = {
           description: string | null;
           is_active: boolean;
           sort_order: number;
-          owner_id: string | null;
+          owner_id: string;
           created_at: string;
           updated_at: string;
         };
@@ -73,7 +123,7 @@ export type Database = {
           description?: string | null;
           is_active?: boolean;
           sort_order?: number;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -84,7 +134,7 @@ export type Database = {
           description?: string | null;
           is_active?: boolean;
           sort_order?: number;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -96,7 +146,7 @@ export type Database = {
           month_start: string;
           monthly_budget: number;
           daily_allowance: number | null;
-          owner_id: string | null;
+          owner_id: string;
           created_at: string;
           updated_at: string;
         };
@@ -105,7 +155,7 @@ export type Database = {
           month_start: string;
           monthly_budget: number;
           daily_allowance?: number | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -114,7 +164,7 @@ export type Database = {
           month_start?: string;
           monthly_budget?: number;
           daily_allowance?: number | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -129,7 +179,7 @@ export type Database = {
           adjustment_direction: string | null;
           category_id: string | null;
           description: string | null;
-          owner_id: string | null;
+          owner_id: string;
           created_at: string;
           updated_at: string;
         };
@@ -141,7 +191,7 @@ export type Database = {
           adjustment_direction?: string | null;
           category_id?: string | null;
           description?: string | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -153,7 +203,7 @@ export type Database = {
           adjustment_direction?: string | null;
           category_id?: string | null;
           description?: string | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -176,7 +226,7 @@ export type Database = {
           description: string | null;
           status: string;
           converted_transaction_id: string | null;
-          owner_id: string | null;
+          owner_id: string;
           created_at: string;
           updated_at: string;
         };
@@ -188,7 +238,7 @@ export type Database = {
           description?: string | null;
           status?: string;
           converted_transaction_id?: string | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -200,7 +250,7 @@ export type Database = {
           description?: string | null;
           status?: string;
           converted_transaction_id?: string | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -228,7 +278,7 @@ export type Database = {
           destination_month: string;
           amount: number;
           note: string | null;
-          owner_id: string | null;
+          owner_id: string;
           created_at: string;
         };
         Insert: {
@@ -237,7 +287,7 @@ export type Database = {
           destination_month: string;
           amount: number;
           note?: string | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
         };
         Update: {
@@ -246,7 +296,7 @@ export type Database = {
           destination_month?: string;
           amount?: number;
           note?: string | null;
-          owner_id?: string | null;
+          owner_id?: string;
           created_at?: string;
         };
         Relationships: [];
@@ -291,6 +341,7 @@ export type TablesInsert<T extends keyof PublicSchema["Tables"]> =
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T] extends { Update: infer U } ? U : never;
 
+export type ProfileRow = Tables<"profiles">;
 export type AppSettingsRow = Tables<"app_settings">;
 export type CategoryRow = Tables<"categories">;
 export type MonthlyBudgetRow = Tables<"monthly_budgets">;

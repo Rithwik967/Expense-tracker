@@ -1,21 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Budget">
-  <defs>
-    <linearGradient id="brand-maskable" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#14b8a6" />
-      <stop offset="1" stop-color="#0f766e" />
-    </linearGradient>
-  </defs>
-  <!-- Full bleed: a maskable icon is cropped to whatever shape the launcher uses. -->
-  <rect width="512" height="512" fill="url(#brand-maskable)" />
-  <!-- The glyph stays inside the 80% safe zone so no crop can clip it. -->
-  <text
-    x="256"
-    y="260"
-    fill="#ffffff"
-    font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-    font-size="200"
-    font-weight="700"
-    text-anchor="middle"
-    dominant-baseline="central"
-  >¹</text>
+  <rect width="512" height="512" fill="#091426"/>
+  <rect x="168" y="128" width="176" height="80" rx="16" fill="#fbf8fa"/>
+  <rect x="132" y="196" width="248" height="180" rx="40" fill="#6cf8bb"/>
+  <path d="M132 250h248" stroke="#006c49" stroke-width="8" opacity="0.22"/>
+  <circle cx="332" cy="286" r="30" fill="#091426"/>
+  <circle cx="332" cy="286" r="13" fill="#c88000"/>
 </svg>

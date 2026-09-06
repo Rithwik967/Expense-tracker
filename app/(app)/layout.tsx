@@ -1,11 +1,16 @@
 import type * as React from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { AppDataProvider } from "@/components/providers/app-data-provider";
+import { ProfileProvider } from "@/components/providers/profile-provider";
 
-/**
- * The signed-in-app frame. A route-group layout has no path of its own, so the
- * generated `LayoutProps` helper does not cover it.
- */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppDataProvider>
+      <ProfileProvider>
+        <AppShell>{children}</AppShell>
+      </ProfileProvider>
+    </AppDataProvider>
+  );
 }
+

@@ -90,6 +90,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const bootstrap = useResource<BootstrapView>("bootstrap", api.bootstrap);
 
+  React.useEffect(() => {
+    if (bootstrap.error?.status === 401) {
+      window.location.href = "/login";
+    }
+  }, [bootstrap.error]);
+
   const monthKey = month && today ? `month:${month}:${today}` : null;
   const monthView = useResource<MonthView>(monthKey, () =>
     api.month(month as MonthKey, today as DateKey),

@@ -1,11 +1,11 @@
 "use client";
 
-import { Database, HardDrive } from "lucide-react";
+import { Database, HardDrive, UserRound } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
+import { AppLogo } from "@/components/brand/app-logo";
 import { MonthBudgetForm } from "@/components/budget/month-budget-form";
-import { MonthSwitcher } from "@/components/layout/month-switcher";
-import { PageHeader } from "@/components/layout/page-header";
 import { useAppData } from "@/components/providers/app-data-provider";
 import { AppearanceForm } from "@/components/settings/appearance-form";
 import { CategoryManager } from "@/components/settings/category-manager";
@@ -30,14 +30,31 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Budget, categories and your data." />
+      <div className="mb-4 flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Settings &amp; Preferences</h1>
+        <p className="max-w-md text-sm text-ink-muted">
+          Customize your {APP_NAME} experience and manage your financial data securely.
+        </p>
+      </div>
 
       <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
         <div className="space-y-6">
-          <Section title="Budget">
-            <div className="mb-2 rounded-control border border-border bg-surface px-1">
-              <MonthSwitcher />
-            </div>
+          <Section title="Account">
+            <Link
+              href="/profile"
+              className="flex items-center gap-3 rounded-xl bg-surface-muted p-4 shadow-card"
+            >
+              <span className="flex size-10 items-center justify-center rounded-full bg-brand-soft text-brand-ink">
+                <UserRound className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-ink">User profile</span>
+                <span className="block text-xs text-ink-muted">Name, photo, and sign out</span>
+              </span>
+            </Link>
+          </Section>
+
+          <Section title="Budget configuration">
             {resource.error ? (
               <ErrorState message={resource.error.message} onRetry={resource.reload} />
             ) : month === null || resource.isLoading ? (
@@ -51,7 +68,7 @@ export default function SettingsPage() {
             <DefaultsForm />
           </Section>
 
-          <Section title="Categories">
+          <Section title="Organization">
             <CategoryManager />
           </Section>
         </div>
@@ -61,18 +78,21 @@ export default function SettingsPage() {
             <AppearanceForm />
           </Section>
 
-          <Section title="Data">
+          <Section title="Data & backup">
             <DataManagement />
           </Section>
 
           <Section title="About">
             <Card>
               <CardHeader>
-                <div className="min-w-0">
-                  <CardTitle>{APP_NAME}</CardTitle>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    A private tracker for one person. No account, no sharing.
-                  </p>
+                <div className="flex items-center gap-3">
+                  <AppLogo className="size-10" />
+                  <div className="min-w-0">
+                    <CardTitle>{APP_NAME}</CardTitle>
+                    <p className="mt-0.5 text-xs text-ink-muted">
+                      Your spending is stored on your signed-in account.
+                    </p>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -116,7 +136,7 @@ export default function SettingsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+      <h2 className="label-caps mb-2 px-1 tracking-widest text-ink-subtle">
         {title}
       </h2>
       {children}

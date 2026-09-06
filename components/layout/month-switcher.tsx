@@ -36,7 +36,7 @@ export function MonthSwitcher({ compact = false }: { compact?: boolean }) {
 
       <p
         aria-live="polite"
-        className="min-w-0 flex-1 text-center text-sm font-semibold text-ink"
+        className="min-w-0 flex-1 text-center text-lg font-semibold leading-7 tracking-tight text-ink whitespace-nowrap"
       >
         {formatMonthLabel(month, compact ? "short" : "long")}
       </p>

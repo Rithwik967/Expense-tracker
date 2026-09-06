@@ -32,7 +32,7 @@ export function CategoryBreakdown({
 
   return (
     <div className="space-y-4 sm:flex sm:items-center sm:gap-6 sm:space-y-0">
-      <div className="mx-auto h-40 w-40 shrink-0">
+      <div className="mx-auto hidden h-40 w-40 shrink-0 sm:block">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -72,7 +72,7 @@ export function CategoryBreakdown({
         </ResponsiveContainer>
       </div>
 
-      <ul className="min-w-0 flex-1 space-y-3">
+      <ul className="min-w-0 flex-1 space-y-3 sm:pt-0">
         {categories.map((slice) => (
           <li key={slice.categoryId ?? "uncategorised"}>
             <div className="flex items-baseline justify-between gap-3">

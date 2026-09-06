@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 
 import { AppProviders } from "@/components/providers/app-providers";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/components/providers/theme-provider";
@@ -7,8 +7,8 @@ import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -38,8 +38,8 @@ export const viewport: Viewport = {
   // Lets the layout paint under the notch, with `pt-safe`/`pb-safe` insetting it.
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f5f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0c10" },
+    { media: "(prefers-color-scheme: light)", color: "#fbf8fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#121316" },
   ],
 };
 
@@ -47,7 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             flashes light before switching to dark. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col font-sans">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -86,22 +86,29 @@ Restart the dev server. The banner disappears once Supabase is answering.
 
 ## Security, honestly stated
 
-This app has no authentication, because it is for one person. The RLS policies in
-`supabase/migrations/20260901000002_rls.sql` grant the `anon` role full access to every
-table.
+Sign-in is required. RLS on money tables is `(select auth.uid()) = owner_id`; a profile
+row is keyed by the user's id. The anon / publishable key identifies the project — it does
+not let one person read another person's ledger.
 
-**That means the anon key is the only thing protecting your data.** Treat it as a password
-and keep the deployment private — do not put this on a public URL and share it.
+Never add a service-role key. `NEXT_PUBLIC_*` variables are inlined into the browser bundle.
 
-The schema is built so that adding auth later is a policy change rather than a rewrite: add
-a `user_id` column, swap `true` for `auth.uid() = user_id` in each policy, and none of the
-financial model has to move. The policy file documents the exact steps.
+On Vercel, set the same two variables as `.env.local`:
+
+| Variable | What it is |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon / publishable key |
+
+In the Supabase dashboard, add the deployed origin to Auth → URL configuration:
+
+- Site URL: `https://<your-app>.vercel.app`
+- Redirect URLs: `https://<your-app>.vercel.app/auth/callback` (keep `http://localhost:3000/auth/callback` for local)
 
 Two structural decisions support that:
 
-- All data access happens on the server, in route handlers under `app/api`. The browser
-  never talks to Supabase directly, so the finance engine runs in exactly one place and
-  every screen reads the same computed numbers.
+- Ledger reads and writes happen on the server, in route handlers under `app/api`, so the
+  finance engine runs in exactly one place and every screen reads the same computed numbers.
+  Auth cookies and profile realtime are the exceptions that talk to Supabase from the browser.
 - Imported backup files are treated as untrusted input: validated structurally, then checked
   for referential problems a single row cannot reveal (an expense pointing at a category
   that is not in the file, two plans linked to the same transaction), and written only if
@@ -111,8 +118,11 @@ Two structural decisions support that:
 
 ```
 app/
-  (app)/            the six screens: home, calendar, insights, transactions, planned, settings
-  api/              every read and write; the only place Supabase is touched
+  (auth)/           login and signup
+  (app)/            home, calendar, insights, transactions, planned, settings, profile
+  api/              ledger reads and writes; auth and profile routes
+  auth/callback     email confirmation / OAuth return
+
 components/
   ui/               primitives — button, card, field, sheet, toast, money, states
   dashboard/ …      one folder per feature area

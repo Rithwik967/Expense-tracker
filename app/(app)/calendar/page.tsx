@@ -2,17 +2,17 @@
 
 import * as React from "react";
 
+import { CalendarLegend, MonthCalendar } from "@/components/calendar/month-calendar";
 import { DayDetailSheet } from "@/components/calendar/day-detail-sheet";
-import { MonthCalendar } from "@/components/calendar/month-calendar";
-import { PageHeader } from "@/components/layout/page-header";
 import { useAppData } from "@/components/providers/app-data-provider";
-import { AddTransactionFab } from "@/components/transactions/add-transaction-fab";
 import { TransactionFormSheet } from "@/components/transactions/transaction-form-sheet";
-import { Card, CardContent } from "@/components/ui/card";
+import { TransactionRow } from "@/components/transactions/transaction-row";
 import { Amount } from "@/components/ui/money";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import type { TransactionRecord } from "@/lib/data/types";
 import type { DateKey } from "@/lib/finance/types";
+import { formatDayLabel } from "@/lib/utils/formatting";
+import { cn } from "@/lib/utils/cn";
 
 /**
  * Calendar.
@@ -23,88 +23,86 @@ import type { DateKey } from "@/lib/finance/types";
 export default function CalendarPage() {
   const { monthView, currency, today } = useAppData();
   const [selected, setSelected] = React.useState<DateKey | null>(null);
+  const [sheetDate, setSheetDate] = React.useState<DateKey | null>(null);
   const [editing, setEditing] = React.useState<TransactionRecord | null>(null);
   const [addDate, setAddDate] = React.useState<DateKey | null>(null);
 
   const view = monthView.data;
+  const previewDate = selected ?? today;
+  const previewDay = view?.days.find((day) => day.date === previewDate);
+  const previewTx = view?.transactions.filter((row) => row.date === previewDate) ?? [];
 
   return (
     <>
-      <PageHeader
-        title="Calendar"
-        description="Every day's closing balance, derived from your transactions."
-        withMonthSwitcher
-      />
-
       {monthView.error ? (
         <ErrorState message={monthView.error.message} onRetry={monthView.reload} />
       ) : monthView.isLoading || !view || !today ? (
-        <Card>
-          <CardContent className="space-y-2" aria-busy="true">
-            <Skeleton className="h-4 w-28" />
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 35 }, (_, index) => (
-                <Skeleton key={index} className="h-[58px]" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-3" aria-busy="true">
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-80 w-full rounded-2xl" />
+        </div>
       ) : (
-        <div className="space-y-3">
-          <Card>
-            <CardContent>
-              <MonthCalendar
-                days={view.days}
-                today={today}
-                currency={currency}
-                selected={selected}
-                onSelect={setSelected}
-              />
-            </CardContent>
-          </Card>
+        <div className="flex flex-col gap-6">
+          <CalendarLegend />
 
-          <Card>
-            <CardContent>
-              <dl className="grid grid-cols-3 gap-3">
-                <div className="min-w-0">
-                  <dt className="truncate text-xs text-ink-muted">Spent this month</dt>
-                  <dd className="tabular mt-0.5 text-sm font-semibold text-ink">
-                    <Amount value={view.summary.totalSpent} currency={currency} />
-                  </dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="truncate text-xs text-ink-muted">Days over allowance</dt>
-                  <dd className="tabular mt-0.5 text-sm font-semibold text-ink">
-                    {view.days.filter((day) => day.totalSpent > day.dailyAllowance).length}
-                  </dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="truncate text-xs text-ink-muted">Days below zero</dt>
-                  <dd className="tabular mt-0.5 text-sm font-semibold text-ink">
-                    {view.days.filter((day) => day.endingBalance < 0).length}
-                  </dd>
-                </div>
-              </dl>
+          <MonthCalendar
+            days={view.days}
+            today={today}
+            currency={currency}
+            selected={selected}
+            onSelect={setSelected}
+          />
 
-              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-ink-subtle">
-                <span className="flex items-center gap-1.5">
-                  <span aria-hidden className="size-2 rounded-full bg-positive" />
-                  Closed in credit
+          {previewDay ? (
+            <div className="rounded-2xl bg-surface p-5 shadow-raised">
+              <button
+                type="button"
+                onClick={() => setSheetDate(previewDay.date)}
+                className="mb-4 flex w-full items-start justify-between gap-3 text-left"
+              >
+                <div>
+                  <h3 className="mb-1 text-xl font-semibold text-ink">
+                    {formatDayLabel(previewDay.date)}
+                  </h3>
+                  <p className="text-sm text-ink-muted">Daily allowance active</p>
+                </div>
+                <span
+                  className={cn(
+                    "rounded-full px-3 py-1.5 label-caps",
+                    previewDay.endingBalance < 0
+                      ? "bg-negative-soft text-[#93000a] dark:text-negative"
+                      : "bg-positive-soft text-positive",
+                  )}
+                >
+                  <Amount value={previewDay.endingBalance} currency={currency} />
+                  {previewDay.endingBalance >= 0 ? " left" : ""}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span aria-hidden className="size-2 rounded-full bg-negative" />
-                  Closed below zero
-                </span>
-                <span>Faded days have not happened yet.</span>
-              </p>
-            </CardContent>
-          </Card>
+              </button>
+
+              <div className="space-y-3">
+                {previewTx.length === 0 ? (
+                  <p className="rounded-xl bg-surface-muted p-3 text-sm text-ink-muted">
+                    Nothing recorded on this day.
+                  </p>
+                ) : (
+                  previewTx.map((transaction) => (
+                    <TransactionRow
+                      key={transaction.id}
+                      transaction={transaction}
+                      onSelect={setEditing}
+                      className="rounded-xl bg-surface-muted"
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 
       <DayDetailSheet
-        date={selected}
-        onClose={() => setSelected(null)}
+        date={sheetDate}
+        onClose={() => setSheetDate(null)}
         onEditTransaction={setEditing}
         onAddOnDate={setAddDate}
       />
@@ -120,8 +118,6 @@ export default function CalendarPage() {
         onClose={() => setAddDate(null)}
         initialDate={addDate ?? undefined}
       />
-
-      <AddTransactionFab initialDate={today ?? undefined} />
     </>
   );
 }
