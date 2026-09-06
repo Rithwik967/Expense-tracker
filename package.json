@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate:local": "./scripts/apply-migrations.sh"
+    "db:migrate:local": "bash scripts/apply-migrations.sh",
+    "db:verify": "bash scripts/verify-database.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
