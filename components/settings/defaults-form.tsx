@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AmountInput, Field, FieldHint, FieldLabel, Select } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
-import { InlineError } from "@/components/ui/states";
+import { InlineError, Skeleton } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
 import { useSaveSettings } from "@/hooks/use-budget";
 import { toDecimalString } from "@/lib/finance/money";
 import { SUPPORTED_CURRENCIES, currencySymbol } from "@/lib/utils/currency";
 import { nonNegativeAmountSchema } from "@/lib/validations/shared";
+import type { AppSettingsView } from "@/types/app";
 
 /**
  * Defaults for months that have no budget row of their own.
@@ -22,31 +23,38 @@ import { nonNegativeAmountSchema } from "@/lib/validations/shared";
  * re-derived the next time they are read.
  */
 export function DefaultsForm() {
-  const { settings, currency } = useAppData();
+  const { settings } = useAppData();
+
+  if (!settings) return <DefaultsFormSkeleton />;
+
+  /*
+   * Keyed on the saved values so the fields are seeded once, at mount, from
+   * `useState` initialisers. When a save comes back the key changes and the
+   * form mounts again with the stored figures — no effect writing over what the
+   * user typed, and no window where the inputs disagree with the database.
+   */
+  return (
+    <DefaultsFields
+      key={`${settings.currency}:${settings.defaultMonthlyBudget}:${settings.defaultDailyAllowance ?? "derived"}`}
+      settings={settings}
+    />
+  );
+}
+
+function DefaultsFields({ settings }: { settings: AppSettingsView }) {
   const toast = useToast();
   const saveSettings = useSaveSettings();
 
-  const [budgetInput, setBudgetInput] = React.useState("");
-  const [allowanceInput, setAllowanceInput] = React.useState("");
-  const [derive, setDerive] = React.useState(true);
-  const [currencyCode, setCurrencyCode] = React.useState(currency);
-
-  const seedKey = settings
-    ? `${settings.currency}:${settings.defaultMonthlyBudget}:${settings.defaultDailyAllowance ?? "derived"}`
-    : "loading";
-
-  React.useEffect(() => {
-    if (!settings) return;
-    setBudgetInput(toDecimalString(settings.defaultMonthlyBudget));
-    setAllowanceInput(
-      settings.defaultDailyAllowance === null
-        ? ""
-        : toDecimalString(settings.defaultDailyAllowance),
-    );
-    setDerive(settings.defaultDailyAllowance === null);
-    setCurrencyCode(settings.currency);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed re-seed
-  }, [seedKey]);
+  const [budgetInput, setBudgetInput] = React.useState(() =>
+    toDecimalString(settings.defaultMonthlyBudget),
+  );
+  const [allowanceInput, setAllowanceInput] = React.useState(() =>
+    settings.defaultDailyAllowance === null
+      ? ""
+      : toDecimalString(settings.defaultDailyAllowance),
+  );
+  const [derive, setDerive] = React.useState(settings.defaultDailyAllowance === null);
+  const [currencyCode, setCurrencyCode] = React.useState(settings.currency);
 
   const budgetValid = nonNegativeAmountSchema.safeParse(budgetInput).success;
   const allowanceValid = derive || nonNegativeAmountSchema.safeParse(allowanceInput).success;
@@ -122,6 +130,19 @@ export function DefaultsForm() {
           <FieldHint>Changes how amounts are displayed. Stored amounts are unchanged.</FieldHint>
         </Field>
 
+        <Field>
+          <FieldLabel>Month starts on</FieldLabel>
+          <Select value="1" disabled>
+            <option value="1">The 1st</option>
+          </Select>
+          <FieldHint>
+            Months currently run from the 1st to the last calendar day. The database stores a start
+            day so a salary-aligned month can be added later, but the calculation engine does not
+            read it yet — offering the choice now would report balances for periods it does not
+            actually use.
+          </FieldHint>
+        </Field>
+
         {saveSettings.error ? <InlineError message={saveSettings.error.message} /> : null}
 
         <Button
@@ -132,6 +153,17 @@ export function DefaultsForm() {
           {saveSettings.isPending ? "Saving…" : "Save defaults"}
         </Button>
       </CardContent>
+    </Card>
+  );
+}
+
+function DefaultsFormSkeleton() {
+  return (
+    <Card className="space-y-3 p-4">
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-11 w-full" />
+      <Skeleton className="h-11 w-full" />
+      <Skeleton className="h-11 w-full" />
     </Card>
   );
 }

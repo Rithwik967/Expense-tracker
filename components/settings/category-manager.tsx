@@ -178,38 +178,35 @@ export function CategoryManager() {
         </CardContent>
       </Card>
 
-      <CategoryFormSheet
-        open={adding}
-        onClose={() => setAdding(false)}
-        onSubmit={async (values) => {
-          const result = await create.run(values);
-          if (!result.ok) return result.error.message;
-          toast.success(`${values.name} added.`);
-          return null;
-        }}
-        pending={create.isPending}
-      />
+      {adding ? (
+        <CategoryFormSheet
+          onClose={() => setAdding(false)}
+          onSubmit={async (values) => {
+            const result = await create.run(values);
+            if (!result.ok) return result.error.message;
+            toast.success(`${values.name} added.`);
+            return null;
+          }}
+          pending={create.isPending}
+        />
+      ) : null}
 
-      <CategoryFormSheet
-        open={editing !== null}
-        category={editing}
-        onClose={() => setEditing(null)}
-        onSubmit={async (values) => {
-          if (!editing) return null;
-          const result = await update.run(editing.id, values);
-          if (!result.ok) return result.error.message;
-          toast.success("Category updated.");
-          return null;
-        }}
-        onToggleActive={
-          editing
-            ? async (isActive) => {
-                await setActive(editing, isActive);
-              }
-            : undefined
-        }
-        pending={update.isPending}
-      />
+      {editing ? (
+        <CategoryFormSheet
+          category={editing}
+          onClose={() => setEditing(null)}
+          onSubmit={async (values) => {
+            const result = await update.run(editing.id, values);
+            if (!result.ok) return result.error.message;
+            toast.success("Category updated.");
+            return null;
+          }}
+          onToggleActive={async (isActive) => {
+            await setActive(editing, isActive);
+          }}
+          pending={update.isPending}
+        />
+      ) : null}
     </>
   );
 }
@@ -220,15 +217,18 @@ interface CategoryFormValues {
   description: string | null;
 }
 
+/**
+ * Rendered only while it is open, so the fields seed themselves at mount from
+ * whichever category was chosen and there is no effect copying props into
+ * state behind the user's typing.
+ */
 function CategoryFormSheet({
-  open,
   onClose,
   category = null,
   onSubmit,
   onToggleActive,
   pending,
 }: {
-  open: boolean;
   onClose: () => void;
   category?: CategoryRecord | null;
   /** Resolves to an error message, or `null` when the save succeeded. */
@@ -236,18 +236,10 @@ function CategoryFormSheet({
   onToggleActive?: (isActive: boolean) => Promise<void>;
   pending: boolean;
 }) {
-  const [name, setName] = React.useState("");
-  const [icon, setIcon] = React.useState("");
-  const [description, setDescription] = React.useState("");
+  const [name, setName] = React.useState(category?.name ?? "");
+  const [icon, setIcon] = React.useState(category?.icon ?? "");
+  const [description, setDescription] = React.useState(category?.description ?? "");
   const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (!open) return;
-    setName(category?.name ?? "");
-    setIcon(category?.icon ?? "");
-    setDescription(category?.description ?? "");
-    setError(null);
-  }, [open, category]);
 
   const submit = async () => {
     if (name.trim() === "") {
@@ -271,7 +263,7 @@ function CategoryFormSheet({
 
   return (
     <Sheet
-      open={open}
+      open
       onClose={onClose}
       title={category ? `Edit ${category.name}` : "Add a category"}
       footer={

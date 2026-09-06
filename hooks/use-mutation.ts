@@ -41,8 +41,15 @@ export function useMutation<TArgs extends unknown[], TResult>(
     };
   }, []);
 
+  /*
+   * The action is usually an inline closure, so `run` reads it from a ref to
+   * stay referentially stable for the components that pass it to a memoised
+   * child. Written from an effect, since a ref must not be touched mid-render.
+   */
   const actionRef = React.useRef(action);
-  actionRef.current = action;
+  React.useEffect(() => {
+    actionRef.current = action;
+  });
 
   const run = React.useCallback(async (...args: TArgs): Promise<MutationResult<TResult>> => {
     setIsPending(true);

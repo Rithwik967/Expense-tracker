@@ -5,6 +5,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
+import { useIsHydrated } from "@/hooks/use-is-hydrated";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -41,11 +42,9 @@ export function Sheet({
 }: SheetProps) {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const previouslyFocused = React.useRef<HTMLElement | null>(null);
-  const [mounted, setMounted] = React.useState(false);
+  const hydrated = useIsHydrated();
   const titleId = React.useId();
   const descriptionId = React.useId();
-
-  React.useEffect(() => setMounted(true), []);
 
   React.useEffect(() => {
     if (!open) return;
@@ -93,7 +92,7 @@ export function Sheet({
     };
   }, [open, onClose]);
 
-  if (!mounted || !open) return null;
+  if (!hydrated || !open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">

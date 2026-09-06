@@ -32,7 +32,9 @@ export function useBudget(): BudgetResult {
   const resource = useResource<{ budgets: MonthlyBudgetRecord[] }>("budgets", api.budgets);
   useReloadOnChange(resource.reload, revision);
 
-  const budgets = resource.data?.budgets ?? [];
+  const loaded = resource.data?.budgets;
+  const budgets = React.useMemo<readonly MonthlyBudgetRecord[]>(() => loaded ?? [], [loaded]);
+
   const byMonth = React.useMemo(
     () => new Map(budgets.map((budget) => [budget.monthStart, budget])),
     [budgets],

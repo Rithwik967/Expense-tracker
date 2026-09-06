@@ -13,18 +13,7 @@ import { Sheet } from "@/components/ui/sheet";
  * actions. Reserved for wiping all data — using it for routine deletes would
  * train the user to type past it without reading.
  */
-export function ConfirmDialog({
-  open,
-  onClose,
-  onConfirm,
-  title,
-  description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
-  tone = "default",
-  requirePhrase,
-  busy = false,
-}: {
+export interface ConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -35,18 +24,36 @@ export function ConfirmDialog({
   tone?: "default" | "danger";
   requirePhrase?: string;
   busy?: boolean;
-}) {
-  const [typed, setTyped] = React.useState("");
+}
 
-  React.useEffect(() => {
-    if (open) setTyped("");
-  }, [open]);
+/**
+ * Nothing is rendered while the dialog is closed, so the typed phrase resets by
+ * being mounted afresh each time rather than by an effect clearing it — a
+ * half-typed DELETE cannot survive a cancel.
+ */
+export function ConfirmDialog(props: ConfirmDialogProps) {
+  if (!props.open) return null;
+  return <ConfirmDialogPanel {...props} />;
+}
+
+function ConfirmDialogPanel({
+  onClose,
+  onConfirm,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  tone = "default",
+  requirePhrase,
+  busy = false,
+}: ConfirmDialogProps) {
+  const [typed, setTyped] = React.useState("");
 
   const phraseSatisfied = !requirePhrase || typed === requirePhrase;
 
   return (
     <Sheet
-      open={open}
+      open
       onClose={onClose}
       title={title}
       footer={

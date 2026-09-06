@@ -62,14 +62,6 @@ export interface DayMovements {
   readonly transactionCount: number;
 }
 
-const EMPTY_MOVEMENTS: DayMovements = {
-  income: ZERO,
-  expenses: ZERO,
-  creditAdjustments: ZERO,
-  debitAdjustments: ZERO,
-  transactionCount: 0,
-};
-
 /** Net effect of a day's transactions on the running balance. */
 export function netMovement(movements: DayMovements): Money {
   return fromMinor(

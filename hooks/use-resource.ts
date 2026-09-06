@@ -22,11 +22,13 @@ export interface Resource<T> {
   reload: () => void;
 }
 
+/** The outcome of the most recent settled request. */
 interface ResourceState<T> {
   key: string | null;
+  /** Which attempt at `key` produced this, so a reload counts as pending. */
+  attempt: number;
   data: T | null;
   error: ApiError | null;
-  pending: boolean;
 }
 
 /**
@@ -60,39 +62,40 @@ export function useReloadOnChange(reload: () => void, token: number): void {
 export function useResource<T>(key: string | null, fetcher: () => Promise<T>): Resource<T> {
   const [state, setState] = React.useState<ResourceState<T>>({
     key: null,
+    attempt: 0,
     data: null,
     error: null,
-    pending: key !== null,
   });
-  const [nonce, setNonce] = React.useState(0);
+  const [attempt, setAttempt] = React.useState(0);
 
-  // Held in a ref so a fetcher closure that changes on every render does not
-  // become a refetch loop; `key` is the only thing that decides when to refetch.
+  /*
+   * Held in a ref, and written from an effect rather than during render, so a
+   * fetcher closure that is rebuilt every render does not become a refetch
+   * loop. Declared above the fetching effect so React runs it first and the
+   * fetch always sees the closure from the render that scheduled it.
+   */
   const fetcherRef = React.useRef(fetcher);
-  fetcherRef.current = fetcher;
+  React.useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   React.useEffect(() => {
     if (key === null) return;
 
     let active = true;
-    setState((current) => ({
-      key,
-      data: current.key === key ? current.data : null,
-      error: null,
-      pending: true,
-    }));
 
     fetcherRef.current().then(
       (data) => {
-        if (active) setState({ key, data, error: null, pending: false });
+        if (active) setState({ key, attempt, data, error: null });
       },
       (error: unknown) => {
         if (active) {
           setState((current) => ({
             key,
+            attempt,
+            // A failed reload keeps the figures already on screen.
             data: current.key === key ? current.data : null,
             error: toApiError(error),
-            pending: false,
           }));
         }
       },
@@ -101,20 +104,26 @@ export function useResource<T>(key: string | null, fetcher: () => Promise<T>): R
     return () => {
       active = false;
     };
-  }, [key, nonce]);
+  }, [key, attempt]);
 
-  const reload = React.useCallback(() => setNonce((value) => value + 1), []);
+  const reload = React.useCallback(() => setAttempt((value) => value + 1), []);
 
+  /*
+   * Everything below is derived. Nothing is assigned when the request starts,
+   * which is what lets the effect hold no synchronous state update: "in flight"
+   * is simply "the settled result is not for the request we now want".
+   */
   const isCurrent = state.key === key;
   const data = isCurrent ? state.data : null;
+  const pending = key !== null && !(isCurrent && state.attempt === attempt);
 
   return {
     data,
     error: isCurrent ? state.error : null,
     // A null key means a prerequisite is still missing (the viewer's date, for
     // instance), which is a wait rather than an empty result.
-    isLoading: key === null || ((state.pending || !isCurrent) && data === null),
-    isRefreshing: state.pending && data !== null,
+    isLoading: key === null || (pending && data === null),
+    isRefreshing: pending && data !== null,
     reload,
   };
 }

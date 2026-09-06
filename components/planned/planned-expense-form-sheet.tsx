@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { useAppData } from "@/components/providers/app-data-provider";
 import { CategorySelect } from "@/components/transactions/category-select";
@@ -63,6 +63,10 @@ export function PlannedExpenseFormSheet({
   React.useEffect(() => {
     if (open) form.reset(defaultValues);
   }, [open, defaultValues, form]);
+
+  // `useWatch` rather than `form.watch`, which returns a fresh function on
+  // every render and opts the whole component out of compiler memoisation.
+  const categoryId = useWatch({ control: form.control, name: "categoryId" });
 
   const errors = form.formState.errors;
   const pending = create.isPending || update.isPending;
@@ -162,7 +166,7 @@ export function PlannedExpenseFormSheet({
           <Field error={errors.categoryId?.message}>
             <FieldLabel>Category</FieldLabel>
             <CategorySelect
-              value={form.watch("categoryId")}
+              value={categoryId}
               onChange={(next) => form.setValue("categoryId", next, { shouldValidate: false })}
             />
           </Field>

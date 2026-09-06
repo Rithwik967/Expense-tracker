@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { useAppData } from "@/components/providers/app-data-provider";
 import { CategorySelect } from "@/components/transactions/category-select";
@@ -98,7 +98,9 @@ export function TransactionFormSheet({
     if (open) form.reset(defaultValues);
   }, [open, defaultValues, form]);
 
-  const type = form.watch("type");
+  // `useWatch` rather than `form.watch`, which returns a fresh function on
+  // every render and opts the whole component out of compiler memoisation.
+  const type = useWatch({ control: form.control, name: "type" });
   const errors = form.formState.errors;
   const pending = create.isPending || update.isPending;
   const submitError = create.error ?? update.error;
@@ -154,7 +156,9 @@ export function TransactionFormSheet({
     });
   };
 
-  const dateValue = form.watch("date");
+  const dateValue = useWatch({ control: form.control, name: "date" });
+  const adjustmentDirection = useWatch({ control: form.control, name: "adjustmentDirection" });
+  const categoryId = useWatch({ control: form.control, name: "categoryId" });
 
   // An adjustment always has a direction; leaving the control unset would show
   // "Adds money" as selected while the value was still empty.
@@ -230,7 +234,7 @@ export function TransactionFormSheet({
               <Segmented
                 label="Adjustment direction"
                 options={DIRECTION_OPTIONS}
-                value={(form.watch("adjustmentDirection") || "credit") as "credit" | "debit"}
+                value={adjustmentDirection || "credit"}
                 onChange={(next) =>
                   form.setValue("adjustmentDirection", next, { shouldValidate: false })
                 }
@@ -245,7 +249,7 @@ export function TransactionFormSheet({
             <Field error={errors.categoryId?.message}>
               <FieldLabel>Category</FieldLabel>
               <CategorySelect
-                value={form.watch("categoryId")}
+                value={categoryId}
                 onChange={(next) => form.setValue("categoryId", next, { shouldValidate: false })}
               />
             </Field>

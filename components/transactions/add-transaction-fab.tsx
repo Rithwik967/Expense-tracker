@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { TransactionFormSheet } from "@/components/transactions/transaction-form-sheet";
@@ -14,49 +15,60 @@ import { TRANSACTION_TYPES } from "@/lib/finance/types";
  * laptop. It opens straight onto an expense — the thing recorded several times
  * a day — with the type switchable inside the sheet rather than behind an extra
  * menu.
- *
- * `?add=expense` opens it on load, which is what the installed app's
- * home-screen shortcut points at. The parameter is stripped afterwards so a
- * refresh does not reopen the sheet.
  */
 export function AddTransactionFab({ initialDate }: { initialDate?: DateKey }) {
-  const [open, setOpen] = React.useState(false);
-  const [type, setType] = React.useState<TransactionType>("expense");
-
-  React.useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("add");
-    if (!requested) return;
-
-    if ((TRANSACTION_TYPES as readonly string[]).includes(requested)) {
-      setType(requested as TransactionType);
-      setOpen(true);
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete("add");
-    window.history.replaceState(null, "", url.toString());
-  }, []);
+  const [type, setType] = React.useState<TransactionType | null>(null);
 
   return (
     <>
       <button
         type="button"
-        onClick={() => {
-          setType("expense");
-          setOpen(true);
-        }}
+        onClick={() => setType("expense")}
         aria-label="Add a transaction"
         className="fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-brand text-white shadow-raised transition-colors hover:bg-brand-strong active:bg-brand-strong lg:bottom-8 lg:right-8"
       >
         <Plus className="size-6" aria-hidden />
       </button>
 
-      <TransactionFormSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        initialType={type}
-        initialDate={initialDate}
-      />
+      {type ? (
+        <TransactionFormSheet
+          open
+          onClose={() => setType(null)}
+          initialType={type}
+          initialDate={initialDate}
+        />
+      ) : null}
+
+      <React.Suspense fallback={null}>
+        <ShortcutSheet initialDate={initialDate} />
+      </React.Suspense>
     </>
+  );
+}
+
+/**
+ * `?add=expense` opens the form on load, which is what the installed app's
+ * home-screen shortcuts point at.
+ *
+ * The parameter is read from the router rather than from `window.location` in
+ * an effect, so the sheet is already open in the first client render instead of
+ * appearing a beat later. Closing it replaces the URL, which is also what stops
+ * a refresh from reopening the sheet.
+ */
+function ShortcutSheet({ initialDate }: { initialDate?: DateKey }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const requested = searchParams.get("add") ?? "";
+  if (!(TRANSACTION_TYPES as readonly string[]).includes(requested)) return null;
+
+  return (
+    <TransactionFormSheet
+      open
+      onClose={() => router.replace(pathname)}
+      initialType={requested as TransactionType}
+      initialDate={initialDate}
+    />
   );
 }

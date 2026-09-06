@@ -112,7 +112,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const goToCurrentMonth = React.useCallback(() => setMonthState(currentMonthKey()), []);
 
-  const categories = bootstrap.data?.categories ?? [];
+  /*
+   * Memoised so the fallback does not allocate a new empty array on every
+   * render, which would make every downstream memo and the context value churn
+   * while the bootstrap request is still in flight.
+   */
+  const bootstrapCategories = bootstrap.data?.categories;
+  const categories = React.useMemo<readonly CategoryRecord[]>(
+    () => bootstrapCategories ?? [],
+    [bootstrapCategories],
+  );
+
   const categoriesById = React.useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
     [categories],

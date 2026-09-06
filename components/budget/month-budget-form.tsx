@@ -9,15 +9,16 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AmountInput, Field, FieldHint, FieldLabel } from "@/components/ui/field";
 import { Amount } from "@/components/ui/money";
 import { Switch } from "@/components/ui/switch";
-import { InlineError } from "@/components/ui/states";
+import { InlineError, Skeleton } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
 import { useSaveBudget } from "@/hooks/use-budget";
 import { resolveMonthAllowance } from "@/lib/finance/calculations";
-import { ZERO, toDecimalString, type Money } from "@/lib/finance/money";
+import { toDecimalString, type Money } from "@/lib/finance/money";
 import type { MonthKey, MonthlyBudgetConfig } from "@/lib/finance/types";
 import { currencySymbol } from "@/lib/utils/currency";
 import { formatMonthLabel } from "@/lib/utils/formatting";
 import { nonNegativeAmountSchema } from "@/lib/validations/shared";
+import type { AppSettingsView } from "@/types/app";
 
 /**
  * The budget for one month.
@@ -39,32 +40,57 @@ export function MonthBudgetForm({
   /** The month's own row, or `undefined` when it falls back to the defaults. */
   existing: MonthlyBudgetConfig | undefined;
 }) {
-  const { settings, currency, today } = useAppData();
+  const { settings } = useAppData();
+
+  if (!settings) return <MonthBudgetFormSkeleton />;
+
+  /*
+   * Keyed on the month and its saved figures so the fields seed once, at mount,
+   * from `useState` initialisers. Switching month or saving changes the key and
+   * mounts the form again against the stored values, which is both simpler than
+   * an effect writing state back and free of the render where the inputs still
+   * show the previous month.
+   */
+  return (
+    <MonthBudgetFields
+      key={`${month}:${existing?.monthlyBudget ?? "default"}:${existing?.dailyAllowance ?? "derived"}`}
+      month={month}
+      existing={existing}
+      settings={settings}
+    />
+  );
+}
+
+function MonthBudgetFields({
+  month,
+  existing,
+  settings,
+}: {
+  month: MonthKey;
+  existing: MonthlyBudgetConfig | undefined;
+  settings: AppSettingsView;
+}) {
+  const { today } = useAppData();
+  const currency = settings.currency;
   const toast = useToast();
   const saveBudget = useSaveBudget();
 
-  const [budgetInput, setBudgetInput] = React.useState("");
-  const [allowanceInput, setAllowanceInput] = React.useState("");
-  const [derive, setDerive] = React.useState(true);
+  const seededAllowance = existing ? existing.dailyAllowance : settings.defaultDailyAllowance;
+
+  const [budgetInput, setBudgetInput] = React.useState(() =>
+    toDecimalString(existing?.monthlyBudget ?? settings.defaultMonthlyBudget),
+  );
+  const [allowanceInput, setAllowanceInput] = React.useState(() =>
+    seededAllowance === null ? "" : toDecimalString(seededAllowance),
+  );
+  const [derive, setDerive] = React.useState(seededAllowance === null);
   const [confirming, setConfirming] = React.useState(false);
-
-  // Re-seed the fields whenever the month or its saved row changes.
-  const seedKey = `${month}:${existing?.monthlyBudget ?? "default"}:${existing?.dailyAllowance ?? "derived"}`;
-  React.useEffect(() => {
-    const budget = existing?.monthlyBudget ?? settings?.defaultMonthlyBudget ?? ZERO;
-    const allowance = existing ? existing.dailyAllowance : (settings?.defaultDailyAllowance ?? null);
-
-    setBudgetInput(toDecimalString(budget));
-    setAllowanceInput(allowance === null ? "" : toDecimalString(allowance));
-    setDerive(allowance === null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed re-seed
-  }, [seedKey]);
 
   const parsedBudget = parseAmount(budgetInput);
   const parsedAllowance = derive ? null : parseAmount(allowanceInput);
 
   const preview =
-    settings && parsedBudget !== null
+    parsedBudget !== null
       ? resolveMonthAllowance(
           month,
           { monthStart: month, monthlyBudget: parsedBudget, dailyAllowance: parsedAllowance },
@@ -204,6 +230,17 @@ export function MonthBudgetForm({
         busy={saveBudget.isPending}
       />
     </>
+  );
+}
+
+function MonthBudgetFormSkeleton() {
+  return (
+    <Card className="space-y-3 p-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-11 w-full" />
+      <Skeleton className="h-11 w-full" />
+      <Skeleton className="h-20 w-full" />
+    </Card>
   );
 }
 

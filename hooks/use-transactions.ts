@@ -45,7 +45,6 @@ export interface TransactionsResult {
 export function useTransactions(query: TransactionQuery): TransactionsResult {
   const { revision } = useAppData();
   const pageSize = query.pageSize ?? TRANSACTIONS_PAGE_SIZE;
-  const [limit, setLimit] = React.useState(pageSize);
 
   const params = React.useMemo(
     () => ({
@@ -59,11 +58,29 @@ export function useTransactions(query: TransactionQuery): TransactionsResult {
     [query.from, query.to, query.types, query.categoryIds, query.search, query.sort],
   );
 
-  // A changed filter is a different question; start again from the first page.
   const filterKey = JSON.stringify(params);
-  React.useEffect(() => {
-    setLimit(pageSize);
-  }, [filterKey, pageSize]);
+
+  /*
+   * How many pages deep the user has scrolled, and which filter they were
+   * looking at when they got there.
+   *
+   * A changed filter is a different question, so the depth resets — but it
+   * resets by being derived rather than by an effect writing state back, which
+   * would render the old depth once before correcting itself. `growth` only
+   * ever increases, so it distinguishes "show me more" from "different
+   * filter" and no redundant request is made when the filter changes.
+   */
+  const [pagination, setPagination] = React.useState({ filterKey, pages: 1, growth: 0 });
+  const pages = pagination.filterKey === filterKey ? pagination.pages : 1;
+  const limit = pageSize * pages;
+
+  const loadMore = React.useCallback(() => {
+    setPagination((current) => ({
+      filterKey,
+      pages: current.filterKey === filterKey ? current.pages + 1 : 2,
+      growth: current.growth + 1,
+    }));
+  }, [filterKey]);
 
   /*
    * `limit` is deliberately outside the resource key. Asking for more rows is a
@@ -76,18 +93,13 @@ export function useTransactions(query: TransactionQuery): TransactionsResult {
   );
 
   useReloadOnChange(resource.reload, revision);
-  useReloadOnChange(resource.reload, limit);
-
-  const loadMore = React.useCallback(
-    () => setLimit((current) => current + pageSize),
-    [pageSize],
-  );
+  useReloadOnChange(resource.reload, pagination.growth);
 
   return {
     transactions: resource.data?.transactions ?? [],
     total: resource.data?.total ?? 0,
     hasMore: resource.data?.hasMore ?? false,
-    isLoadingMore: resource.isRefreshing && limit > pageSize,
+    isLoadingMore: resource.isRefreshing && pages > 1,
     loadMore,
     resource,
   };
