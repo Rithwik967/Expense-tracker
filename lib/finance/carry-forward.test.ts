@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createLedger } from "./calculations";
 import {
+  computeOpeningBalance,
   getCarryForward,
   getCarryForwardHistory,
   getExtraMoney,
@@ -10,7 +11,7 @@ import {
 import { getDailyBalance } from "./daily-balance";
 import { getMonthlySummary } from "./monthly-balance";
 import { toDecimalString } from "./money";
-import { budget, expense, ledgerInput } from "./test-support";
+import { TEST_SETTINGS, adjustment, budget, expense, income, ledgerInput, rupees } from "./test-support";
 
 const SEPTEMBER = "2026-09-01";
 const OCTOBER = "2026-10-01";
@@ -123,6 +124,49 @@ describe("multi-month chains", () => {
 
     expect(toDecimalString(getCarryForward(input, OCTOBER))).toBe("800.00");
     expect(toDecimalString(getCarryForward(input, "2026-11-01"))).toBe("800.00");
+  });
+
+  it("derives the same opening balance from month totals as from the raw rows", () => {
+    const transactions = [
+      expense("2026-09-03", 1200),
+      expense("2026-09-18", 400),
+      income("2026-10-02", 2500),
+      expense("2026-10-11", 9600),
+      adjustment("2026-11-04", 150, "debit"),
+      expense("2026-11-20", 300),
+    ];
+
+    const budgets = [budget(SEPTEMBER), budget(OCTOBER), budget("2026-11-01")];
+    const full = createLedger(ledgerInput({ budgets, transactions }));
+
+    // What the data layer actually sends: one aggregate row per month.
+    const totals = ["2026-09", "2026-10", "2026-11"].map((prefix) => {
+      const rows = transactions.filter((t) => t.date.startsWith(prefix));
+      const totalOf = (predicate: (t: (typeof rows)[number]) => boolean) =>
+        rupees(
+          rows
+            .filter(predicate)
+            .reduce((sum, t) => sum + t.amount, 0) / 100,
+        );
+
+      return {
+        monthStart: `${prefix}-01`,
+        income: totalOf((t) => t.type === "income"),
+        expenses: totalOf((t) => t.type === "expense"),
+        creditAdjustments: totalOf(
+          (t) => t.type === "adjustment" && t.adjustmentDirection === "credit",
+        ),
+        debitAdjustments: totalOf(
+          (t) => t.type === "adjustment" && t.adjustmentDirection === "debit",
+        ),
+      };
+    });
+
+    for (const month of [OCTOBER, "2026-11-01", "2026-12-01"]) {
+      expect(computeOpeningBalance(TEST_SETTINGS, budgets, totals, SEPTEMBER, month)).toBe(
+        full.openingBalance(month),
+      );
+    }
   });
 
   it("matches a pre-aggregated opening balance to a full replay of history", () => {

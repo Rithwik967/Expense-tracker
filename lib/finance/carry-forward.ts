@@ -1,8 +1,99 @@
 import { addMonthsToKey, toMonthKey } from "@/lib/utils/dates";
 
-import { createLedger, type Ledger } from "./calculations";
-import { atLeastZero, type Money } from "./money";
-import type { CarryForwardRecord, DateKey, LedgerInput, MonthKey } from "./types";
+import { createLedger, resolveMonthAllowance, type Ledger } from "./calculations";
+import { ZERO, add, atLeastZero, fromMinor, type Money } from "./money";
+import type {
+  CarryForwardRecord,
+  DateKey,
+  FinanceSettings,
+  LedgerInput,
+  MonthKey,
+  MonthlyBudgetConfig,
+} from "./types";
+
+/** Month-level transaction sums, as produced by `monthly_transaction_totals`. */
+export interface MonthlyTotals {
+  readonly monthStart: MonthKey;
+  readonly income: Money;
+  readonly expenses: Money;
+  readonly creditAdjustments: Money;
+  readonly debitAdjustments: Money;
+}
+
+/** Net effect of a month's transactions on the running balance. */
+export function netFromTotals(totals: MonthlyTotals): Money {
+  return fromMinor(
+    totals.income + totals.creditAdjustments - totals.expenses - totals.debitAdjustments,
+  );
+}
+
+/**
+ * Walk the month-by-month chain using pre-aggregated totals.
+ *
+ * Equivalent to replaying every transaction, because the order of transactions
+ * inside a month cannot change that month's closing balance. That equivalence
+ * is what lets the data layer show December without downloading January, and it
+ * is asserted directly in the tests.
+ */
+export function computeMonthlyChain(
+  settings: FinanceSettings,
+  budgets: readonly MonthlyBudgetConfig[],
+  totals: readonly MonthlyTotals[],
+  anchorMonth: MonthKey,
+  throughMonth: MonthKey,
+): CarryForwardRecord[] {
+  const budgetsByMonth = new Map(budgets.map((budget) => [budget.monthStart, budget]));
+  const totalsByMonth = new Map(totals.map((entry) => [entry.monthStart, entry]));
+
+  const records: CarryForwardRecord[] = [];
+  let balance = ZERO;
+  let cursor = anchorMonth;
+
+  while (cursor <= throughMonth) {
+    const allowance = resolveMonthAllowance(cursor, budgetsByMonth.get(cursor), settings);
+    const monthTotals = totalsByMonth.get(cursor);
+
+    balance = add(balance, allowance.allocatedTotal);
+    if (monthTotals) balance = add(balance, netFromTotals(monthTotals));
+
+    records.push({
+      month: cursor,
+      closingBalance: balance,
+      carriedIntoNextMonth: balance,
+      extraMoney: atLeastZero(balance),
+    });
+
+    cursor = addMonthsToKey(cursor, 1);
+  }
+
+  return records;
+}
+
+/**
+ * Balance carried into `month`, derived from months that came before it.
+ *
+ * Returns zero when `month` is at or before the anchor, since nothing has
+ * accrued yet.
+ */
+export function computeOpeningBalance(
+  settings: FinanceSettings,
+  budgets: readonly MonthlyBudgetConfig[],
+  totals: readonly MonthlyTotals[],
+  anchorMonth: MonthKey,
+  month: MonthKey,
+): Money {
+  if (month <= anchorMonth) return ZERO;
+
+  const chain = computeMonthlyChain(
+    settings,
+    budgets,
+    totals,
+    anchorMonth,
+    addMonthsToKey(month, -1),
+  );
+
+  return chain.length === 0 ? ZERO : chain[chain.length - 1].closingBalance;
+}
 
 function ledgerFrom(source: LedgerInput | Ledger): Ledger {
   return "dailyBalance" in source ? source : createLedger(source);
