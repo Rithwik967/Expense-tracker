@@ -31,6 +31,8 @@ export interface SpendingPoint {
   readonly spent: number;
   readonly cumulative: number;
   readonly allowance: number;
+  /** Allowance accrued from the first of the month through this day. */
+  readonly allowanceCumulative: number;
   readonly isFuture: boolean;
 }
 
@@ -83,14 +85,19 @@ export function useInsights(): InsightsResult {
     if (!view) return [];
 
     let running = ZERO;
+    let runningAllowance = ZERO;
+
     return view.days.map((day) => {
       running = add(running, day.totalSpent);
+      runningAllowance = add(runningAllowance, day.dailyAllowance);
+
       return {
         date: day.date,
         label: formatChartDate(day.date),
         spent: toMajorNumber(day.totalSpent),
         cumulative: toMajorNumber(running),
         allowance: toMajorNumber(day.dailyAllowance),
+        allowanceCumulative: toMajorNumber(runningAllowance),
         isFuture: day.date > view.today,
       };
     });
